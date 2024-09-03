@@ -55,4 +55,14 @@ class Matriz:
                         self.matriz[j][k] = redondear_convertir(self.matriz[j][k] - factor * self.matriz[i][k], precision, tolerancia)
                     pasos += f"\nFila {j + 1} - fila {i + 1} * {factor}:\n" + self.mostrar()
 
-        return self.matriz, pasos
+        # Calcular las soluciones después de la eliminación
+        soluciones = self.calcular_soluciones()
+
+        return self.matriz, pasos, soluciones
+
+    def calcular_soluciones(self):
+        soluciones = []
+        for i in range(self.filas):
+            valor = self.matriz[i][-1]  # Obtener el último elemento de cada fila (término independiente)
+            soluciones.append(f"x{i + 1} = {valor}")
+        return "\n".join(soluciones)

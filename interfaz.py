@@ -97,19 +97,22 @@ class IngresarMatrizDialog(QDialog):
 
     def procesar_entradas(self, matriz):
         try:
+            # Leer y validar las entradas de la matriz
             for i, fila_entradas in enumerate(self.entradas):
                 for j, entrada in enumerate(fila_entradas):
                     valor_texto = entrada.text()
-                    # Validar que la entrada no esté vacía y sea un número válido
                     if valor_texto.strip() == "":
                         raise ValueError(f"El campo {i+1},{j+1} está vacío.")
                     valor = float(valor_texto)
                     matriz.matriz[i][j] = valor
 
-            resultado, pasos = matriz.gauss_jordan_eliminacion()
-            
-            # Mover o modificar el setText donde quieras mostrar los resultados y pasos
-            self.mostrar_resultados(f"Resultado:\n{matriz.mostrar()}\n\nPasos:\n{pasos}")
+            # Realizar la eliminación Gauss-Jordan y obtener los resultados
+            resultado, pasos, soluciones = matriz.gauss_jordan_eliminacion()
+
+            # Mostrar los resultados: matriz y soluciones
+            self.mostrar_resultados(
+                f"Soluciones:\n{soluciones}\n\nResultado:\n{matriz.mostrar()}\n\nPasos:\n{pasos}"
+            )
 
         except ValueError as e:
             QMessageBox.critical(self, "Error", f"Error al ingresar datos: {str(e)}")
@@ -121,6 +124,7 @@ class IngresarMatrizDialog(QDialog):
         self.main_layout.addWidget(self.resultado_texto)
         
         self.resultado_texto.setText(texto)
+
 
 class VentanaPrincipal(QMainWindow):
     def __init__(self):
