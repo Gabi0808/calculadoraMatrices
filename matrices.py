@@ -113,37 +113,36 @@ class Matriz:
 
         return self.matriz, pasos, soluciones
 
-    def calcular_soluciones(self):
-        soluciones = []
-        for i in range(self.filas):
-            valor = self.matriz[i][-1]  # Obtener el último elemento de cada fila (término independiente)
-            soluciones.append(f"x{i + 1} = {valor}")
-        return "\n".join(soluciones)
-
     def calcular_soluciones_rectangular(self):
         # Identificar soluciones de la matriz escalonada, incluyendo variables libres para matrices rectangulares
         n = self.filas
         m = self.columnas
-        soluciones = ["x" + str(i) for i in range(m - 1)]  # Considerando que la última columna es el término independiente
-        
-        # Detectar filas inconsistentes o variables libres
         soluciones_texto = []
+        pivotes = set()  # Para llevar registro de las columnas que tienen pivotes
+
+        # Recorrer cada fila para encontrar pivotes y soluciones
         for i in range(n):
             fila = self.matriz[i]
             if all(valor == 0 for valor in fila[:-1]) and fila[-1] != 0:
                 soluciones_texto.append("Sistema inconsistente")
-                break
-            
-            # Identificar variables libres
+                return "\n".join(soluciones_texto)  # Salir si el sistema es inconsistente
+
+            # Identificar la posición del pivote en la fila
             pivote = next((index for index, valor in enumerate(fila[:-1]) if abs(valor) > 0), None)
             if pivote is not None:
-                solucion = f"x{pivote+1} = {fila[-1]}"
+                pivotes.add(pivote)
+                solucion = f"x{pivote + 1} = {fila[-1]}"
                 for j in range(pivote + 1, m - 1):
                     if abs(fila[j]) > 0:
-                        solucion += f" - {fila[j]}*x{j}"
+                        solucion += f" - {fila[j]}*x{j + 1}"
                 soluciones_texto.append(solucion)
-        
+
+        # Identificar variables libres: columnas que no son pivotes
+        for col in range(m - 1):
+            if col not in pivotes:
+                soluciones_texto.append(f"x{col + 1} = variable libre")
+
         if not soluciones_texto:
             soluciones_texto.append("Sistema con soluciones infinitas o sin solución única")
-        
-        return soluciones_texto
+
+        return "\n".join(soluciones_texto)
