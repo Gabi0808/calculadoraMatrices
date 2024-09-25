@@ -521,38 +521,78 @@ class MultiplicacionMatrizVectorDialog(QDialog):
 
     def calcular_vector_columna(self):
         try:
-            vectores = []
+            # Crear una lista para almacenar los vectores individuales
+            self.lista_vectores_individuales = []
+
             for vector_input in self.vector_inputs:
                 vector_text = vector_input.text()
                 if vector_text.strip() == "":
                     raise ValueError("Uno de los vectores está vacío.")
-                vector = [float(x.strip()) for x in vector_text.split(",")]
-                vectores.append(vector)
+                
+                # Convertir el texto en lista de floats
+                vector_list = [float(x.strip()) for x in vector_text.split(",")]
 
-            # Validar que todos los vectores tengan la misma longitud
-            longitud = len(vectores[0])
-            if not all(len(v) == longitud for v in vectores):
-                raise ValueError("Todos los vectores deben tener la misma longitud.")
+                # Crear una instancia de Vector con la lista
+                vector = Vector(len(vector_list), vector_list)
+                self.lista_vectores_individuales.append(vector)  # Guardar cada vector individual
 
-            # Sumar los vectores (sin usar escalares para simplificar)
-            vector_suma = [sum(componentes) for componentes in zip(*vectores)]
+            # Usar el método sumar_vectores de la clase Vector
+            vector_suma, pasos = Vector.sumar_vectores(*self.lista_vectores_individuales)
+
+            # Crear un nuevo vector columna con el resultado de la suma
             self.vector_columna = Vector(len(vector_suma), vector_suma)
 
-            self.mostrar_resultados(f"Vector Columna:\n{vector_suma}")
+            # Mostrar los pasos y el resultado usando la función mostrar_resultados
+            self.mostrar_resultados(pasos)
 
         except ValueError as e:
             QMessageBox.critical(self, "Error", str(e))
 
+
     def mostrar_resultados(self, texto):
+        # Eliminar el widget de placeholder_respuestas si existe
+        if self.placeholder_respuestas is not None:
+            self.main_layout.removeWidget(self.placeholder_respuestas)
+            self.placeholder_respuestas.deleteLater()  # Eliminar correctamente el widget
+            self.placeholder_respuestas = None  # Asegurarse de que no se vuelva a referenciar
+
         # Eliminar el widget de resultados anterior si existe
         if self.resultado_texto is not None:
             self.main_layout.removeWidget(self.resultado_texto)
             self.resultado_texto.deleteLater()
+            self.resultado_texto = None  # Asegurarse de que no se vuelva a referenciar
 
-        # Crear un nuevo QTextEdit para mostrar el resultado
+        # Construir la expresión de la matriz multiplicada por el vector calculado
+        matriz_vector_texto = "Expresiones de las Operaciones:\n"
+        matriz_vector_texto += "Matriz * (Vector Calculado) = \n"
+        for fila in self.matriz.matriz:
+            matriz_vector_texto += f"{fila} * {self.vector_columna.vector}\n"
+        
+        matriz_vector_texto += "\nMatriz * (Vector 1) + Matriz * (Vector 2) + ... =\n"
+        
+        # Agregar cada operación de matriz por vector individual
+        for idx, vector in enumerate(self.lista_vectores_individuales):
+            matriz_vector_texto += f"Matriz * (Vector {idx + 1}) = \n"
+            for fila in self.matriz.matriz:
+                matriz_vector_texto += f"{fila} * {vector.vector}\n"
+            matriz_vector_texto += "\n"
+
+        # Mostrar la matriz, los vectores y la expresión en el QTextEdit
+        self.placeholder_respuestas = QTextEdit()
+        self.placeholder_respuestas.setReadOnly(True)
+        self.placeholder_respuestas.setFontFamily("Courier New")
+        self.placeholder_respuestas.setText(matriz_vector_texto)
+
+        # Fijar el tamaño del QTextEdit para la matriz y el vector
+        self.placeholder_respuestas.setFixedSize(400, 300)  # Ajusta el tamaño según necesites
+
+        # Añadir el QTextEdit con las expresiones al layout principal
+        self.main_layout.addWidget(self.placeholder_respuestas)
+
+        # Crear un nuevo QTextEdit para mostrar el resultado de los pasos
         self.resultado_texto = QTextEdit()
         self.resultado_texto.setReadOnly(True)
-        self.resultado_texto.setFontFamily("Courier New")  # Fuente monoespaciada
+        self.resultado_texto.setFontFamily("Courier New")
         self.resultado_texto.setText(texto)
 
         # Añadir el QTextEdit al layout principal
@@ -560,36 +600,52 @@ class MultiplicacionMatrizVectorDialog(QDialog):
 
     def realizar_multiplicacion_y_mostrar_resultados(self):
         try:
-            # Verificar si la matriz y el vector columna están ingresados correctamente
-            if not hasattr(self, 'matriz') or not hasattr(self, 'vector_columna'):
-                raise ValueError("Debe ingresar la matriz y el vector columna antes de realizar la multiplicación.")
+            # Verificar si la matriz y los vectores están ingresados correctamente
+            if not hasattr(self, 'matriz') or not hasattr(self, 'lista_vectores_individuales'):
+                raise ValueError("Debe ingresar la matriz y al menos un vector antes de realizar la multiplicación.")
 
-            # Verificar dimensiones
-            if len(self.matriz.matriz[0]) != len(self.vector_columna.vector):
-                raise ValueError("El número de columnas de la matriz debe coincidir con la longitud del vector columna.")
+            # Crear una lista para almacenar los resultados de la multiplicación por cada vector
+            resultados_individuales = []
+            pasos_totales = "Demostración de la Propiedad Distributiva:\n\n"
 
-            # Variable para almacenar los pasos
-            pasos = "Pasos de la multiplicación de la matriz por el vector:\n\n"
+            # Multiplicar la matriz por cada vector individual
+            for idx, vector in enumerate(self.lista_vectores_individuales):
+                # Verificar dimensiones antes de la multiplicación
+                if len(self.matriz.matriz[0]) != vector.dimension:
+                    raise ValueError(f"El número de columnas de la matriz no coincide con la longitud del vector {idx + 1}.")
 
-            # Realizar la multiplicación de la matriz por el vector columna y registrar los pasos
-            resultado = [0] * len(self.matriz.matriz)
-            for i in range(len(self.matriz.matriz)):
-                paso_fila = f"Fila {i + 1}:\n"
-                for j in range(len(self.matriz.matriz[i])):
-                    multiplicacion = self.matriz.matriz[i][j] * self.vector_columna.vector[j]
-                    resultado[i] += multiplicacion
-                    paso_fila += f"  {self.matriz.matriz[i][j]} * {self.vector_columna.vector[j]} = {multiplicacion}\n"
-                paso_fila += f"Suma de la fila {i + 1} = {resultado[i]}\n\n"
-                pasos += paso_fila
+                # Multiplicar la matriz por el vector individual y almacenar el resultado y pasos
+                resultado_individual, pasos = self.matriz.multiplicar_matriz_por_vector(vector)
+                resultados_individuales.append(resultado_individual)
+                pasos_totales += f"Multiplicación de la matriz por el vector {idx + 1}:\n{pasos}\n\n"
 
-            pasos += f"Resultado final:\n{resultado}"
+            # Sumar los resultados individuales
+            suma_resultado = [sum(fila) for fila in zip(*resultados_individuales)]
+            pasos_totales += f"Sumando los resultados de cada vector:\n"
+
+            # Mostrar cada suma por componente
+            for i in range(len(suma_resultado)):
+                componentes = [resultados[i] for resultados in resultados_individuales]
+                pasos_totales += f"Componente {i + 1}: " + " + ".join(map(str, componentes)) + f" = {suma_resultado[i]}\n"
+
+            pasos_totales += f"\nResultado de la suma de los productos individuales:\n{suma_resultado}\n\n"
+
+            # Calcular el producto de la matriz por el vector calculado (suma de vectores)
+            resultado_vector_calculado, pasos_vector_calculado = self.matriz.multiplicar_matriz_por_vector(self.vector_columna)
+            pasos_totales += "Multiplicación de la matriz por el vector calculado (suma de los vectores):\n"
+            pasos_totales += f"{pasos_vector_calculado}\n"
+
+            # Verificar si los resultados coinciden
+            if resultado_vector_calculado == suma_resultado:
+                pasos_totales += "\n¡Se cumple la propiedad distributiva! El resultado es el mismo.\n"
+            else:
+                pasos_totales += "\nNo se cumple la propiedad distributiva. Hay una discrepancia en los resultados.\n"
 
             # Mostrar los pasos usando la función mostrar_resultados
-            self.mostrar_resultados(pasos)
+            self.mostrar_resultados(pasos_totales)
 
         except ValueError as e:
             QMessageBox.critical(self, "Error", f"Error: {str(e)}")
-
 
 
 class VentanaPrincipal(QMainWindow):
