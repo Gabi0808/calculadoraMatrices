@@ -33,7 +33,7 @@ class Formateador:
     def box_vector_horizontal(vector, title=""):
         number_strings = [str(num) for num in vector]
         max_num_length = max(len(s) for s in number_strings)
-        total_width = len(vector) * (max_num_length + 1) + (len(vector) - 1)
+        total_width = len(vector) * (max_num_length + 1) + (len(vector)+1)
 
         result = f"┌{'─' * total_width}┐\n"
         if title:
@@ -41,11 +41,39 @@ class Formateador:
             result += f"│{centered_title}│\n"
             result += f"├{'─' * total_width}┤\n"
 
-        row_str = " ".join(f"{num.rjust(max_num_length)}" for num in number_strings)
+        row_str = " ".join(f"{num.rjust(max_num_length)} " for num in number_strings)
         result += f"│ {row_str} │\n"
         result += f"└{'─' * total_width}┘\n"
         return result
 
+class MatrizHelper:
+    @staticmethod
+    def box_matrix(matrix, title=""):
+        # Convertir todos los elementos de la matriz a cadenas de caracteres
+        matrix_str = [[str(num) for num in row] for row in matrix]
+        
+        # Encontrar la longitud máxima de los números en la matriz para formatear la tabla
+        max_num_length = max(len(num) for row in matrix_str for num in row)
+
+        # Determinar el ancho total de la matriz
+        total_width = len(matrix[0]) * (max_num_length + 1) + (len(matrix[0])+1)
+
+        # Crear la parte superior de la caja
+        result = f"┌{'─' * total_width}┐\n"
+        if title:
+            centered_title = title.center(total_width)
+            result += f"│{centered_title}│\n"
+            result += f"├{'─' * total_width}┤\n"
+
+        # Agregar cada fila de la matriz
+        for row in matrix_str:
+            row_str = " ".join(f"{num.rjust(max_num_length)} " for num in row)
+            result += f"│ {row_str} │\n"
+
+        # Crear la parte inferior de la caja
+        result += f"└{'─' * total_width}┘\n"
+        
+        return result
 
 class GestorPasos:
     def __init__(self):

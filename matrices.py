@@ -8,10 +8,7 @@ class Matriz:
         self.matriz = [[0 for _ in range(columnas)] for _ in range(filas)]
 
     def mostrar(self):
-        resultado = ""
-        for fila in self.matriz:
-            resultado += str(fila) + "\n"
-        return resultado
+        return MatrizHelper.box_matrix(self.matriz)
 
     def redondear_convertir(self, valor, precision, tolerancia):
         valor_redondeado = round(valor, precision)
@@ -107,15 +104,18 @@ class Matriz:
         if self.columnas != vector.dimension:
             raise ValueError("El número de columnas de la matriz debe coincidir con la dimensión del vector.")
         
-        resultado = [0] * self.filas
+        resultado = []
         gestor_pasos = GestorPasos()
         gestor_pasos.agregar_paso("Multiplicación de matriz por vector:")
 
         for i in range(self.filas):
             fila = Vector(self.columnas, self.matriz[i])
             producto, pasos = fila.producto_vector_fila_por_vector_columna(vector)
-            resultado[i] = producto
+            resultado.append(producto)
             gestor_pasos.agregar_paso(f"Resultado de fila {i + 1}: {pasos}")
         
-        gestor_pasos.agregar_paso("Resultado final:", vector=Formateador.box_vector(resultado))
+        resultado_final = Vector(len(resultado), resultado)
+        gestor_pasos.agregar_paso("Resultado final después de sumar las filas:", vector=Formateador.box_vector(resultado_final.vector, "") )
+        
         return resultado, gestor_pasos.mostrar_pasos()
+

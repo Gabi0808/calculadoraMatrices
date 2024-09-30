@@ -12,7 +12,7 @@ class Vector:
             self.vector = [0 for _ in range(dimension)]
 
     def escalar_vector(self):
-        self.vector = [elemento * self.escalar for elemento in self.vector]
+        self.vector = [float(elemento) * self.escalar for elemento in self.vector]
         
     @staticmethod
     def sumar_vectores(*vectores):
