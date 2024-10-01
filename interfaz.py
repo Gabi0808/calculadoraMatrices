@@ -1,12 +1,15 @@
 import sys
 from PyQt5.QtWidgets import (
     QApplication, QDialog, QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QLineEdit,
-    QPushButton, QSpacerItem, QSizePolicy, QMessageBox, QTextEdit, QMainWindow, QWidget, QComboBox,
+    QPushButton, QSpacerItem, QSizePolicy, QMessageBox, QTextEdit, QMainWindow, QWidget, QComboBox,QSlider
 )
 from PyQt5.QtCore import Qt
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matrices import Matriz
 from vectores import Vector
 from utilidades import *
+from visualizador import *
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 
 # Subclase personalizada de QLineEdit para manejar eventos de Enter correctamente
 class CustomLineEdit(QLineEdit):
@@ -341,6 +344,76 @@ class ProductoVectorDialog(QDialog):
         except ValueError as e:
             QMessageBox.critical(self, "Error", str(e))
 
+from PyQt5.QtWidgets import QVBoxLayout, QSlider, QLabel, QDialog
+from PyQt5.QtCore import Qt
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+import matplotlib.pyplot as plt
+
+class TransformacionMatrizVisualizadorWidget(QDialog):
+    def __init__(self, visualizador):
+        super().__init__()
+        
+        self.visualizador = visualizador
+        self.setWindowTitle("Visualización de Transformación")
+
+        layout = QVBoxLayout(self)
+
+        
+
+        self.fig, self.ax = plt.subplots()
+        self.canvas = FigureCanvas(self.fig)
+        self.toolbar = NavigationToolbar(self.canvas, self)
+        layout.addWidget(self.toolbar)
+        layout.addWidget(self.canvas)
+
+        self.canvas.mpl_connect('scroll_event', self.zoom)
+
+        self.slider = QSlider(Qt.Horizontal)
+        self.slider.setRange(0, 100)  # Slider de 0 a 100 para representar t entre 0 y 1
+        self.slider.setValue(0)  # Valor inicial del slider
+        self.slider.setSingleStep(1)  # Incrementos de 0.01
+        self.slider.valueChanged.connect(self.actualizar_transformacion)
+
+        # Crear etiqueta para mostrar el valor de t
+        self.label = QLabel(f't = 0.00')
+        layout.addWidget(self.label)
+        layout.addWidget(self.slider)
+
+        # Visualización inicial con t = 0 (sin transformación)
+        self.actualizar_transformacion()
+        self.exec_()
+
+    def actualizar_transformacion(self):
+        t = self.slider.value() / 100.0
+        self.label.setText(f't = {t:.2f}')
+        self.ax.clear()
+        self.visualizador.visualizar_con_interpolacion(self.ax, rango_valores=20, paso=1, t=t)
+        self.ax.set_xlim(-7, 7)
+        self.ax.set_ylim(-7, 7)
+        self.canvas.draw()
+
+    def zoom(self, event):
+        base_scale = 1.2
+        
+        if event.button == 'up':
+            scale_factor = base_scale
+        elif event.button == 'down':
+            scale_factor = 1 / base_scale
+        else:
+            return
+        xlim = self.ax.get_xlim()
+        ylim = self.ax.get_ylim()
+        xdata = event.xdata  # Obtener la posición del mouse en x
+        ydata = event.ydata  # Obtener la posición del mouse en y
+        if xdata is None or ydata is None:
+            return
+        new_xlim = [xdata - (xdata - xlim[0]) / scale_factor, xdata + (xlim[1] - xdata) / scale_factor]
+        new_ylim = [ydata - (ydata - ylim[0]) / scale_factor, ydata + (ylim[1] - ydata) / scale_factor]
+
+        self.ax.set_xlim(new_xlim)
+        self.ax.set_ylim(new_ylim)
+        self.canvas.draw()
+            
 class MultiplicacionMatrizVectorDialog(QDialog):
     def __init__(self):
         super().__init__()
@@ -398,7 +471,7 @@ class MultiplicacionMatrizVectorDialog(QDialog):
         self.main_layout.addLayout(self.horizontal_layout)
         
         # Añadir el botón de calcular al final del main_layout
-        calcular_btn = QPushButton("Calcular Multiplicación")
+        calcular_btn = QPushButton("Calcular")
         calcular_btn.clicked.connect(self.calc_respuesta)
         self.calc_botones_layout.addWidget(calcular_btn)
         self.calc_botones_layout.addWidget(self.opciones_calc_combo_box)
@@ -478,6 +551,8 @@ class MultiplicacionMatrizVectorDialog(QDialog):
                 raise ValueError("El número de columnas debe ser un número entero positivo.")
 
             self.matriz = Matriz(n, m)
+            if self.matriz.filas == 2 and self.matriz.columnas == 2:
+                self.opciones_calc_combo_box.addItem("Visualizar transformacion")
             self.configurar_grid_layout(n, m, self.procesar_entradas)
         except ValueError as e:
             QMessageBox.critical(self, "Error", f"Entrada inválida: {str(e)}")
@@ -584,12 +659,16 @@ class MultiplicacionMatrizVectorDialog(QDialog):
                 self.realizar_multiplicacion_matriz_vector()
             elif opcion_seleccionada == "Demostrar propiedad distributiva":
                 self.realizar_multiplicacion_con_demostracion_distributiva()
+            elif opcion_seleccionada == "Visualizar transformacion":
+                if not hasattr(self, 'matriz') or not hasattr(self, 'vector_columna'):
+                    raise ValueError("La matriz y el vector deben estar correctamente definidos antes de visualizar la transformación.")
+    
+                self.visualizador = VisualizadorMatrizPorVector(self.matriz, self.vector_columna)
+                TransformacionMatrizVisualizadorWidget(self.visualizador)
             else:
-                print("Ingrese una opcion") 
-                
-        except:
-            raise ValueError(f"No se ha seleccionado ninguna opcion valida")        
-        
+                print("Ingrese una opcion válida")        
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Error al ejecutar la operación: {str(e)}")
 
     def realizar_multiplicacion_matriz_vector(self):
         
@@ -712,6 +791,7 @@ class MultiplicacionMatrizVectorDialog(QDialog):
 
             # Añadir el QTextEdit al layout principal
             self.main_layout.addWidget(self.resultado_texto)
+
 
 class VentanaPrincipal(QMainWindow):
     def __init__(self):
