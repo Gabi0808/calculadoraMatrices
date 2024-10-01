@@ -344,23 +344,18 @@ class ProductoVectorDialog(QDialog):
         except ValueError as e:
             QMessageBox.critical(self, "Error", str(e))
 
-from PyQt5.QtWidgets import QVBoxLayout, QSlider, QLabel, QDialog
-from PyQt5.QtCore import Qt
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-import matplotlib.pyplot as plt
 
 class TransformacionMatrizVisualizadorWidget(QDialog):
     def __init__(self, visualizador):
         super().__init__()
-        
+
         self.visualizador = visualizador
         self.setWindowTitle("Visualización de Transformación")
 
         layout = QVBoxLayout(self)
 
-        
-
-        self.fig, self.ax = plt.subplots()
+        # Configuración de matplotlib para PyQt
+        self.fig, self.ax = plt.subplots(figsize=(8, 6))  # Tamaño ajustado
         self.canvas = FigureCanvas(self.fig)
         self.toolbar = NavigationToolbar(self.canvas, self)
         layout.addWidget(self.toolbar)
@@ -379,6 +374,9 @@ class TransformacionMatrizVisualizadorWidget(QDialog):
         layout.addWidget(self.label)
         layout.addWidget(self.slider)
 
+        # Almacenar las referencias de los textos creados
+        self.text_objects = []
+
         # Visualización inicial con t = 0 (sin transformación)
         self.actualizar_transformacion()
         self.exec_()
@@ -386,15 +384,110 @@ class TransformacionMatrizVisualizadorWidget(QDialog):
     def actualizar_transformacion(self):
         t = self.slider.value() / 100.0
         self.label.setText(f't = {t:.2f}')
-        self.ax.clear()
+        self.ax.clear()  # Limpia la gráfica, pero no los textos fuera del eje
+
+        # Limpiar los textos anteriores
+        for text_obj in self.text_objects:
+            text_obj.remove()
+        self.text_objects = []
+
+        # Visualizamos la transformación
         self.visualizador.visualizar_con_interpolacion(self.ax, rango_valores=20, paso=1, t=t)
+
+        # Establecemos los límites de los ejes
         self.ax.set_xlim(-7, 7)
         self.ax.set_ylim(-7, 7)
+
+        # Fuentes personalizadas
+        font_x1 = {'family': 'courier new',  
+                'color': 'red', 
+                'weight': 'bold',  
+                'size': 10} 
+
+        font_x2 = {'family': 'courier new',  
+                'color': 'green', 
+                'weight': 'bold', 
+                'size': 10}  
+     
+        font_vector = {'family': 'courier new',  
+                'color': 'yellow', 
+                'weight': 'bold', 
+                'size': 10} 
+        
+        font_resultado = {'family': 'courier new',  
+                'color': 'white', 
+                'weight': 'bold', 
+                'size': 10}  
+        
+        espaciado_fijo = 0.02 
+
+        x_base = 0.25
+
+        def formatear_numero(num):
+            return f'{num:6.2f}'  
+
+        def calcular_longitud_texto(texto):
+
+            return len(texto) * 0.01
+
+        matriz_0_0_str = formatear_numero(self.visualizador.matriz.matriz[0][0])
+        matriz_1_0_str = formatear_numero(self.visualizador.matriz.matriz[1][0])
+        self.text_objects.append(self.fig.text(x_base, 0.8, f'[{matriz_0_0_str}\n[{matriz_1_0_str}', fontdict=font_x1))
+
+        longitud_columna1 = calcular_longitud_texto(matriz_0_0_str)
+        x_base = x_base + longitud_columna1 + 0.01
+
+        matriz_0_1_str = formatear_numero(self.visualizador.matriz.matriz[0][1])
+        matriz_1_1_str = formatear_numero(self.visualizador.matriz.matriz[1][1])
+        self.text_objects.append(self.fig.text(x_base, 0.8, f'{matriz_0_1_str}]\n{matriz_1_1_str}]', fontdict=font_x2))
+
+        longitud_columna2 = calcular_longitud_texto(matriz_0_1_str)
+        x_base = x_base + longitud_columna2 + espaciado_fijo
+
+        vector_0_str = formatear_numero(self.visualizador.vector.vector[0])
+        vector_1_str = formatear_numero(self.visualizador.vector.vector[1])
+        self.text_objects.append(self.fig.text(x_base, 0.8, f'[{vector_0_str}]\n[{vector_1_str}]', fontdict=font_vector))
+
+        longitud_vector = calcular_longitud_texto(vector_0_str)
+        x_base = x_base + longitud_vector + espaciado_fijo
+
+        self.text_objects.append(self.fig.text(x_base, 0.82, ' = ', fontdict=font_resultado))
+
+        longitud_igual = calcular_longitud_texto('=')
+        x_base = x_base + longitud_igual + espaciado_fijo
+
+        resultado_0_str = formatear_numero(self.visualizador.resultado[0])
+        resultado_1_str = formatear_numero(self.visualizador.resultado[1])
+        self.text_objects.append(self.fig.text(x_base, 0.8, f'[{resultado_0_str}]\n[{resultado_1_str}]', fontdict=font_resultado))
+
         self.canvas.draw()
 
     def zoom(self, event):
         base_scale = 1.2
-        
+
+        if event.button == 'up':
+            scale_factor = base_scale
+        elif event.button == 'down':
+            scale_factor = 1 / base_scale
+        else:
+            return
+        xlim = self.ax.get_xlim()
+        ylim = self.ax.get_ylim()
+        xdata = event.xdata  # Obtener la posición del mouse en x
+        ydata = event.ydata  # Obtener la posición del mouse en y
+        if xdata is None or ydata is None:
+            return
+        new_xlim = [xdata - (xdata - xlim[0]) / scale_factor, xdata + (xlim[1] - xdata) / scale_factor]
+        new_ylim = [ydata - (ydata - ylim[0]) / scale_factor, ydata + (ylim[1] - ydata) / scale_factor]
+
+        self.ax.set_xlim(new_xlim)
+        self.ax.set_ylim(new_ylim)
+        self.canvas.draw()
+
+
+    def zoom(self, event):
+        base_scale = 1.2
+
         if event.button == 'up':
             scale_factor = base_scale
         elif event.button == 'down':

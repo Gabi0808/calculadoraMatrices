@@ -5,7 +5,8 @@ from matrices import Matriz, Vector
 class VisualizadorMatrizPorVector:
     def __init__(self, matriz, vector):
         self.matriz = matriz
-        self.vector = vector 
+        self.vector = vector
+        self.resultado = None
 
     def crear_grid_original(self, ax, rango_valores, paso):
         for x in range(-rango_valores, rango_valores + 1, paso):
@@ -88,6 +89,7 @@ class VisualizadorMatrizPorVector:
         vector_transformado, _ = self.matriz.multiplicar_matriz_por_vector(self.vector)
         vector_interpolado = self.interpolar_puntos(vector_original, vector_transformado, t)
         self.dibujar_vector(ax, origen, vector_interpolado, color)
+        return vector_interpolado
 
     def dibujar_area_transformada(self, ax, t):
 
@@ -112,6 +114,6 @@ class VisualizadorMatrizPorVector:
         self.interpolar_grid(ax, rango_valores, paso, t)
         self.interpolar_ejes(ax, rango_valores, t)
         self.crear_vector_matriz(ax, t)
-        self.crear_vector_columna(ax, t)
+        self.resultado = self.crear_vector_columna(ax, t)
         self.dibujar_area_transformada(ax, t)
         ax.figure.canvas.draw()  # Redibuja el canvas
