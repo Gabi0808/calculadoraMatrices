@@ -1,9 +1,9 @@
 from utilidades import *
 
 class Vector:
-    def __init__(self, dimension, vector=None, escalar=1):
+    def __init__(self, dimension, vector=None, orientacion="horizontal"):
         self.dimension = dimension
-        self.escalar = escalar
+        self.orientacion = orientacion
         if vector is not None:
             if len(vector) != dimension:
                 raise ValueError("La longitud del vector no coincide con la dimensión proporcionada.")
@@ -11,8 +11,10 @@ class Vector:
         else:
             self.vector = [0 for _ in range(dimension)]
 
-    def escalar_vector(self):
-        self.vector = [float(elemento) * self.escalar for elemento in self.vector]
+    def escalar_vector(self, escalar=1):
+        # Devuelve un nuevo vector escalado sin modificar el original
+        nuevo_vector = [float(elemento) * escalar for elemento in self.vector]
+        return Vector(self.dimension, nuevo_vector, self.orientacion)
         
     @staticmethod
     def sumar_vectores(*vectores):
@@ -22,9 +24,12 @@ class Vector:
             raise ValueError("Todos los argumentos deben ser instancias de la clase Vector.")
 
         longitud = vectores[0].dimension
+        orientacion = vectores[0].orientacion
         for vector in vectores:
             if vector.dimension != longitud:
                 raise ValueError("Todos los vectores deben tener la misma longitud.")
+            if vector.orientacion != orientacion:
+                raise ValueError("Todos los vectores deben tener la misma orientación.")
 
         resultado = [0] * longitud
         gestor = GestorPasos()
@@ -33,11 +38,7 @@ class Vector:
         for i, vector in enumerate(vectores):
             gestor.agregar_paso(f"Vector {i + 1}:", vector=Formateador.box_vector(vector.vector))
 
-        # Escalar los vectores
-        for i, vector in enumerate(vectores):
-            vector.escalar_vector()
-            gestor.agregar_paso(f"Vector {i + 1} escalado:", vector=Formateador.box_vector(vector.vector))
-        
+        # Sumar los vectores
         for i in range(longitud):
             elementos = [vector.vector[i] for vector in vectores]
             suma_elemento = sum(elementos)
@@ -46,12 +47,14 @@ class Vector:
             gestor.agregar_paso(f"Componente {i + 1}: {suma_detalle} = {suma_elemento}")
 
         gestor.agregar_paso("Resultado final:", Formateador.box_vector(resultado))
-        return resultado, gestor.mostrar_pasos()
+        return Vector(longitud, resultado, orientacion), gestor.mostrar_pasos()
 
     def producto_vector_fila_por_vector_columna(self, otro_vector):
         # Verificar que la longitud de los vectores coincida
         if self.dimension != otro_vector.dimension:
             raise ValueError("Los vectores deben tener la misma longitud.")
+        if self.orientacion != "horizontal" or otro_vector.orientacion != "vertical":
+            raise ValueError("La operación requiere un vector fila (horizontal) y un vector columna (vertical).")
 
         gestor_pasos = GestorPasos()
         # Mostrar el vector fila y el vector columna utilizando Formateador y GestorPasos
@@ -78,3 +81,6 @@ class Vector:
 
         return resultado, gestor_pasos.mostrar_pasos()
     
+    def cambiar_orientacion(self):
+        nueva_orientacion = "vertical" if self.orientacion == "horizontal" else "horizontal"
+        return Vector(self.dimension, self.vector, nueva_orientacion)
