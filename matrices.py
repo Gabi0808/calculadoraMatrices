@@ -52,13 +52,59 @@ class Matriz:
                     for k in range(col, self.columnas):
                         self.matriz[i][k] = self.redondear_convertir(
                             self.matriz[i][k] - factor * self.matriz[fila_pivote][k], precision, tolerancia)
-                    gestor.agregar_paso(f"Fila {i + 1} - ({factor}) * Fila {fila_pivote + 1}:", matriz=self)
+                    gestor.agregar_paso(f"Fila {i + 1} - fila {fila_pivote + 1} * {factor}:", matriz=self)
 
             fila_pivote += 1
 
-        gestor.agregar_paso("Matriz final después de la eliminación de Gauss-Jordan:", matriz=self)
-        return gestor.mostrar_pasos()
+        fila_pivote += 1
 
+        soluciones = self.calcular_soluciones_general()
+        return self.matriz, gestor.mostrar_pasos(), soluciones
+    
+    def calcular_soluciones_general(self):
+        n = self.filas
+        m = self.columnas
+        soluciones_texto = []
+        pivotes = {}
+        
+        for i in range(n):
+            fila = self.matriz[i]
+            col_pivote = None
+            for j in range(m - 1):
+                if abs(fila[j]) > 1e-12:
+                    col_pivote = j
+                    break
+            if col_pivote is None:
+                if abs(fila[-1]) > 1e-12:
+                    soluciones_texto.append("Sistema inconsistente")
+                    return "\n".join(soluciones_texto)
+                else:
+                    continue
+            pivotes[col_pivote] = i
+        
+        variables_totales = set(range(m - 1))
+        variables_pivote = set(pivotes.keys())
+        variables_libres = variables_totales - variables_pivote
+        
+        for col_pivote in sorted(pivotes.keys()):
+            i = pivotes[col_pivote]
+            coef = self.matriz[i]
+            solucion = f"x{col_pivote + 1} = {coef[-1]}"
+            for j in range(col_pivote + 1, m - 1):
+                if abs(coef[j]) > 1e-12:
+                    if coef[j] > 0:
+                        solucion += f" - {abs(coef[j])}*x{j + 1}"
+                    else:
+                        solucion += f" + {abs(coef[j])}*x{j + 1}"
+            soluciones_texto.append(solucion)
+        
+        for var in sorted(variables_libres):
+            soluciones_texto.append(f"x{var + 1} = variable libre")
+        if not soluciones_texto:
+            soluciones_texto.append("Sistema con soluciones infinitas o sin solución única")
+        return "\n".join(soluciones_texto)
+    
+    
     def multiplicar_matriz_por_vector(self, vector):
         if self.columnas != vector.dimension:
             raise ValueError("El número de columnas de la matriz debe coincidir con la dimensión del vector.")
