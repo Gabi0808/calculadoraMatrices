@@ -190,9 +190,8 @@ class Matriz:
         pasos_gestor = GestorPasos()
         pasos_gestor.agregar_paso("Inicio de la multiplicación de matrices:")
 
-        # Mostrar la matriz 1
         pasos_gestor.agregar_paso("Matriz 1:", self.mostrar())
-        # Mostrar la matriz 2
+
         pasos_gestor.agregar_paso("Matriz 2:", otra_matriz.mostrar())
 
         for i in range(self.filas):
@@ -209,3 +208,40 @@ class Matriz:
 
         pasos_gestor.agregar_paso("Resultado final de la multiplicación de matrices:", resultado.mostrar())
         return resultado, pasos_gestor.mostrar_pasos()
+    
+    def calcular_determinante(self):
+        if self.filas != self.columnas:
+            raise ValueError("El determinante solo se puede calcular para matrices cuadradas.")
+        
+        matriz_temp = [fila[:] for fila in self.matriz]  # Crear una copia para no modificar la matriz original
+        n = self.filas
+        signo = 1
+        
+        for i in range(n):
+            # Buscar el pivote en la columna actual
+            max_fila = i
+            for k in range(i + 1, n):
+                if abs(matriz_temp[k][i]) > abs(matriz_temp[max_fila][i]):
+                    max_fila = k
+
+            # Intercambiar filas si es necesario
+            if i != max_fila:
+                matriz_temp[i], matriz_temp[max_fila] = matriz_temp[max_fila], matriz_temp[i]
+                signo *= -1  # Cambia el signo cada vez que intercambiamos filas
+
+            # Si el pivote es cero, el determinante es cero
+            if abs(matriz_temp[i][i]) < 1e-12:
+                return 0
+
+            # Reducir las filas debajo del pivote
+            for j in range(i + 1, n):
+                factor = matriz_temp[j][i] / matriz_temp[i][i]
+                for k in range(i, n):
+                    matriz_temp[j][k] -= factor * matriz_temp[i][k]
+
+        # El determinante es el producto de la diagonal multiplicado por el signo
+        determinante = signo
+        for i in range(n):
+            determinante *= matriz_temp[i][i]
+
+        return determinante

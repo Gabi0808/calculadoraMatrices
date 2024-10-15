@@ -1,7 +1,7 @@
 import sys
 from PyQt5.QtWidgets import (
     QApplication, QDialog, QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QLineEdit,
-    QPushButton, QSpacerItem, QSizePolicy, QMessageBox, QTextEdit, QMainWindow, QWidget, QComboBox,QSlider, QCheckBox
+    QPushButton, QSpacerItem, QSizePolicy, QMessageBox, QTextEdit, QMainWindow, QWidget, QComboBox,QSlider, QCheckBox, QLayout
 )
 from PyQt5.QtCore import Qt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -58,7 +58,7 @@ class InterfazHelper():
             main_layout.removeItem(grid_layout)
         
     @staticmethod
-    def configurar_grid_layout(n, m, aceptar_callback):
+    def configurar_grid_layout(n, m, aceptar_callback, nombre_boton = "Aceptar"):
  
         grid_layout = QGridLayout()
         entradas = []
@@ -72,7 +72,7 @@ class InterfazHelper():
                 grid_layout.addWidget(entrada, i, j)
             entradas.append(fila_entradas)
 
-        aceptar_btn = QPushButton("Aceptar")
+        aceptar_btn = QPushButton(nombre_boton)
         aceptar_btn.clicked.connect(aceptar_callback)
         grid_layout.addWidget(aceptar_btn, n, 0, 1, m)
         
@@ -135,23 +135,34 @@ class InterfazHelper():
     @staticmethod
     def crear_layout_vectores(n_input, ingresar_dimension_callback):
         contenedor_layout = QVBoxLayout()
+        contenedor_botones_layout = QVBoxLayout()
         contenedor_vectores_layout = QHBoxLayout()
         
         dimension_layout = InterfazHelper.crear_layout_ingresar_dimensiones(
             labels_inputs=[("Dimensión de los vectores:", n_input)],
             boton_texto="Ingresar dimensión",
-            boton_callback=ingresar_dimension_callback  # Conectar el botón al callback de ingresar vectores
+            boton_callback=ingresar_dimension_callback 
         )
 
         contenedor_vectores_layout.addLayout(dimension_layout)
-
         contenedor_layout.addLayout(contenedor_vectores_layout)
+        contenedor_layout.addLayout(contenedor_botones_layout)
 
-        return contenedor_layout, contenedor_vectores_layout
-        
+        return contenedor_layout, contenedor_vectores_layout, contenedor_botones_layout
+
+    @staticmethod
+    def limpiar_botones_vectores(contenedor_layout):
+        while contenedor_layout.count():
+            item = contenedor_layout.takeAt(0)
+            widget = item.widget()
+            if widget is not None:
+                widget.deleteLater()
+
     @staticmethod
     def crear_botones_vectores(agregar_vector_callback, eliminar_vector_callback, ejecutar_operacion_callback, contenedor_layout):
         
+        InterfazHelper.limpiar_botones_vectores(contenedor_layout)
+
         agregar_btn = QPushButton("Agregar Vector")
         agregar_btn.clicked.connect(agregar_vector_callback)
         contenedor_layout.addWidget(agregar_btn)
@@ -160,11 +171,9 @@ class InterfazHelper():
         eliminar_btn.clicked.connect(eliminar_vector_callback)
         contenedor_layout.addWidget(eliminar_btn)
         
-        ejecutar_btn = QPushButton("Ejecutar Operación")
+        ejecutar_btn = QPushButton("Calcular")
         ejecutar_btn.clicked.connect(ejecutar_operacion_callback)
         contenedor_layout.addWidget(ejecutar_btn)
-        
-        
         
     @staticmethod
     def leer_entrada_dimension_vector(n_input):
@@ -180,38 +189,45 @@ class InterfazHelper():
             raise
         
     @staticmethod
-    def crear_entrada_vector(dimension):
-        contenedor_vectores_inputs=QVBoxLayout()
-        escalar_input_layout=QHBoxLayout()
-        
-        label= QLabel("Escalar del vector:")
-        escalar_input= QLineEdit()
+    def crear_entrada_vector(dimension, orientacion="vertical"):
+        contenedor_vectores_inputs = QVBoxLayout()
+
+        escalar_input_layout = QHBoxLayout()
+        label = QLabel("Escalar del vector:")
+        escalar_line_edit = QLineEdit()
         escalar_input_layout.addWidget(label)
-        escalar_input_layout.addWidget(escalar_input)
-        
+        escalar_input_layout.addWidget(escalar_line_edit)
+        entrada_escalar = [(label, escalar_line_edit)]
+
+        # Usar QGridLayout para las entradas del vector
         grid_layout = QGridLayout()
         entradas_vector = []
 
         for i in range(dimension):
-            
             etiqueta = QLabel(f"Componente {i + 1}:")
-            grid_layout.addWidget(etiqueta, i, 0)
-
             entrada = QLineEdit()
             entrada.setPlaceholderText(f"Valor {i + 1}")
-            grid_layout.addWidget(entrada, i, 1)
 
-            entradas_vector.append(entrada)
-        
+            if orientacion == "vertical":
+                grid_layout.addWidget(etiqueta, i, 0)
+                grid_layout.addWidget(entrada, i, 1)
+            elif orientacion == "horizontal":
+                grid_layout.addWidget(etiqueta, 0, i * 2)
+                grid_layout.addWidget(entrada, 0, i * 2 + 1)
+            else:
+                raise ValueError("La orientación debe ser 'vertical' u 'horizontal'")
+
+            entradas_vector.append((etiqueta, entrada))
+
         contenedor_vectores_inputs.addLayout(escalar_input_layout)
         contenedor_vectores_inputs.addLayout(grid_layout)
         
-        return escalar_input, entradas_vector, contenedor_vectores_inputs
+        return entrada_escalar, entradas_vector, contenedor_vectores_inputs
     
     @staticmethod
-    def agregar_campo_vector(vector_inputs, escalar_inputs, layout, n):
+    def agregar_campo_vector(vector_inputs, escalar_inputs, layout, n, orientacion="vertical"):
         
-        entrada_escalar, entrada_vector, contenedor_entradas_vector = InterfazHelper.crear_entrada_vector(n)
+        entrada_escalar, entrada_vector, contenedor_entradas_vector = InterfazHelper.crear_entrada_vector(n, orientacion)
         
         layout.addLayout(contenedor_entradas_vector)
         
@@ -219,29 +235,66 @@ class InterfazHelper():
         escalar_inputs.append(entrada_escalar)
     
     @staticmethod    
-    def eliminar_vector(vector_inputs, escalar_inputs, inputs_layout):
+    def eliminar_vector(vector_inputs, entrada_escalar, inputs_layout):
         if vector_inputs:
-        
+            
             entradas_vector = vector_inputs.pop()
-            escalar_input = escalar_inputs.pop()
+            entrada_escalar = entrada_escalar.pop()
 
-            escalar_input.deleteLater()
-
-            for entrada in entradas_vector:
+            for etiqueta, entrada in entrada_escalar:
+                etiqueta.deleteLater()
+                entrada.deleteLater()
+            
+            for etiqueta, entrada in entradas_vector:
+                etiqueta.deleteLater()
                 entrada.deleteLater()
 
-            layout = inputs_layout.takeAt(len(vector_inputs))
-            if layout is not None:
-                while layout.count():
-                    item = layout.takeAt(0)
+            item_layout = inputs_layout.takeAt(inputs_layout.count() - 1)
+            if isinstance(item_layout, QLayout):
+                while item_layout.count():
+                    item = item_layout.takeAt(0)
                     if item.widget():
                         item.widget().deleteLater()
-                inputs_layout.removeItem(layout)
-                
-    
-        
-    
-    
+                item_layout.deleteLater()
+            elif item_layout:
+                widget = item_layout.widget()
+                if widget:
+                    widget.deleteLater()
+            inputs_layout.removeItem(item_layout)
+
+    @staticmethod
+    def limpiar_entradas_vectores(vector_inputs, escalar_inputs, inputs_layout):
+        while vector_inputs:
+            InterfazHelper.eliminar_vector(vector_inputs, escalar_inputs, inputs_layout) 
+
+    @staticmethod
+    def procesar_entrada(entradas_vector, entradas_escalar, orientacion="vertical"):
+        vectores = []
+        escalares = []
+
+        for idx, vector_input in enumerate(entradas_vector):
+            valores_vector = []
+            for _, entrada in vector_input:
+                vector_text = entrada.text()
+                if vector_text.strip() == "":
+                    raise ValueError(f"El vector {idx + 1} tiene componentes vacíos.")
+                valores_vector.append(float(vector_text))
+            vectores.append(Vector(len(valores_vector), valores_vector, orientacion))
+
+        for idx, escalar_input in enumerate(entradas_escalar):
+            escalar_text = escalar_input.text()
+            if escalar_text.strip() == "":
+                raise ValueError(f"El escalar para el vector {idx + 1} está vacío.")
+            escalares.append(float(escalar_text))
+
+        if len(vectores) != len(escalares):
+            raise ValueError("El número de vectores y escalares no coincide.")
+
+        for i, vector in enumerate(vectores):
+            vectores[i] = vector.escalar_vector(escalares[i])
+
+        return vectores
+
 class IngresarMatrizDialog(QDialog):
     def __init__(self, rectangular=False):
         super().__init__()
@@ -324,38 +377,21 @@ class OperacionesVectorDialog(QDialog):
         self.setWindowTitle("Operaciones con Vectores")
         self.setGeometry(100, 100, 500, 600)
 
-        self.main_layout = QVBoxLayout()
+        self.main_layout = QVBoxLayout(self)
         self.main_layout.setAlignment(Qt.AlignTop)
-        
-        self.setLayout(self.main_layout)
         
         self.dimension_input = QLineEdit()
         self.vector_inputs = []
         self.escalar_inputs = []
-        
-        contenedor_layout, self.contenedor_vectores_layout = InterfazHelper.crear_layout_vectores(
+        self.resultado_texto = None
+
+        contenedor_layout, self.contenedor_vectores_layout, self.contenedor_botones_layout = InterfazHelper.crear_layout_vectores(
             n_input=self.dimension_input,
             ingresar_dimension_callback=self.ingresar_vectores
         )
 
         self.main_layout.addLayout(contenedor_layout)
                 
-        """
-        # Botón para agregar vectores
-        agregar_btn = QPushButton("Agregar Vector")
-        agregar_btn.clicked.connect(InterfazHelper.agregar_campo_vector)
-        self.main_layout.addWidget(agregar_btn)
-
-        # Botón para eliminar el último vector
-        eliminar_btn = QPushButton("Eliminar Último Vector")
-        eliminar_btn.clicked.connect(self.eliminar_vector)
-        self.main_layout.addWidget(eliminar_btn)
-
-        # Botón para ejecutar la operación
-        ejecutar_btn = QPushButton("Ejecutar Operación")
-        ejecutar_btn.clicked.connect(self.ejecutar_operacion)
-        self.main_layout.addWidget(ejecutar_btn)"""
-        
     def ingresar_vectores(self):
        
         n = InterfazHelper.leer_entrada_dimension_vector(self.dimension_input)
@@ -363,85 +399,44 @@ class OperacionesVectorDialog(QDialog):
         if n is None:
             return  
 
-        InterfazHelper.agregar_campo_vector(self.vector_inputs, self.escalar_inputs, self.contenedor_vectores_layout,n)
-        InterfazHelper.agregar_campo_vector(self.vector_inputs, self.escalar_inputs, self.contenedor_vectores_layout,n)
-        
-        InterfazHelper.crear_botones_vectores(InterfazHelper.agregar_campo_vector(self.vector_inputs, self.escalar_inputs, self.contenedor_vectores_layout, n),
-                                              InterfazHelper.eliminar_vector(self.vector_inputs, self.escalar_inputs, self.contenedor_vectores_layout),
-                                              self.ejecutar_operacion(), self.contenedor_vectores_layout  
+        InterfazHelper.crear_botones_vectores(lambda: InterfazHelper.agregar_campo_vector(self.vector_inputs, self.escalar_inputs, self.contenedor_vectores_layout, n),
+                                              lambda: InterfazHelper.eliminar_vector(self.vector_inputs, self.escalar_inputs, self.contenedor_vectores_layout),
+                                              lambda: self.ejecutar_operacion(), 
+                                              self.contenedor_botones_layout  
                                               )
-    """
-    def agregar_vector(self):
-        layout = QHBoxLayout()
 
-        escalar_input = QLineEdit()
-        escalar_input.setPlaceholderText("Escalar (para combinación)")
-        self.escalar_inputs.append(escalar_input)
-        layout.addWidget(escalar_input)
+        InterfazHelper.limpiar_entradas_vectores(self.vector_inputs, self.escalar_inputs, self.contenedor_vectores_layout)
 
-        vector_input = QLineEdit()
-        vector_input.setPlaceholderText("Vector (separado por comas)")
-        self.vector_inputs.append(vector_input)
-        layout.addWidget(vector_input)
-
-        self.inputs_layout.addLayout(layout)
-
-    def eliminar_vector(self):
-        if self.vector_inputs:
-            # Remover los campos de entrada
-            vector_input = self.vector_inputs.pop()
-            escalar_input = self.escalar_inputs.pop()
-            vector_input.deleteLater()
-            escalar_input.deleteLater()
-            # Remover el layout
-            layout = self.inputs_layout.takeAt(len(self.vector_inputs))
-            if layout is not None:
-                while layout.count():
-                    item = layout.takeAt(0)
-                    if item.widget():
-                        item.widget().deleteLater()
-                self.inputs_layout.removeItem(layout)"""
-
+        InterfazHelper.agregar_campo_vector(self.vector_inputs, self.escalar_inputs, self.contenedor_vectores_layout,n)
+        InterfazHelper.agregar_campo_vector(self.vector_inputs, self.escalar_inputs, self.contenedor_vectores_layout,n)
+   
     def procesar_entrada_vectores(self):
         try:
-            vectores = []
-            escalares = []
-            for idx, vector_input in enumerate(self.vector_inputs):
-                vector_text = vector_input.text()
-                if vector_text.strip() == "":
-                    raise ValueError(f"El vector {idx + 1} está vacío.")
-                vector = [float(x.strip()) for x in vector_text.split(",")]
-                vectores.append(vector)
             
-            for idx, escalar_input in enumerate(self.escalar_inputs):
-                escalar_text = escalar_input.text()
-                escalar = float(escalar_text)
-                escalares.append(escalar)
+            valores_vector = [elemento for elemento in self.vector_inputs]        
+            valores_escalar = [entrada[0][1] for entrada in self.escalar_inputs]
 
-            if len(vectores) != len(escalares):
-                raise ValueError("El número de vectores y escalares no coincide.")
+            lista_vectores_escalados = InterfazHelper.procesar_entrada(valores_vector, valores_escalar)
 
-            vector_objeto = [Vector(len(vector), vector) for vector in vectores]
-            
-            # Crear la lista de vectores usando la clase Vector correctamente
-            lista_vectores_escalados = [vector_escalado.escalar_vector(escalar) for vector_escalado, escalar in zip(vector_objeto,escalares)]
             return lista_vectores_escalados
-        
+
         except ValueError as e:
-            QMessageBox.critical(self, "Error", str(e))
-            return []  # Retornar una lista vacía en caso de error
-        
+            QMessageBox.critical(self, "Error al procesar entradas", str(e))
+            return []
+
     def ejecutar_operacion(self):
-            
         try:
-            # Llamar a procesar_entrada_vectores para obtener la lista de objetos Vector
             lista_vectores = self.procesar_entrada_vectores()
             if not lista_vectores:
                 return 
             
             resultado, pasos = Vector.sumar_vectores(*lista_vectores)
             
-            self.resultado_texto.setText(pasos)
+            InterfazHelper.limpiar_resultados_texto(self.resultado_texto, self.main_layout)
+
+            self.resultado_texto = InterfazHelper.mostrar_resultados(pasos)
+
+            self.main_layout.addWidget(self.resultado_texto)
 
         except Exception as e:
             QMessageBox.critical(self, "Error", str(e))
@@ -452,60 +447,63 @@ class ProductoVectorDialog(QDialog):
         self.setWindowTitle("Producto de Vector Fila por Vector Columna")
         self.setGeometry(100, 100, 500, 400)
 
-        # Layout principal
-        layout = QVBoxLayout()
+        self.main_layout = QVBoxLayout(self)
+        self.main_layout.setAlignment(Qt.AlignTop)
+        self.dimension_input = QLineEdit()
+        self.vector_fila_inputs = [] 
+        self.vector_columna_inputs = []
+        self.escalares_inputs = []
+        self.resultados_texto = None
 
-        # Input para el vector fila
-        self.vector_fila_input = QLineEdit()
-        layout.addWidget(QLabel("Vector Fila (separado por comas):"))
-        layout.addWidget(self.vector_fila_input)
+        contenedor_layout, self.contenedor_vectores_layout, self.contenedor_botones_layout = InterfazHelper.crear_layout_vectores(
+            n_input=self.dimension_input,
+            ingresar_dimension_callback=self.ingresar_vectores
+        )
 
-        # Input para el vector columna
-        self.vector_columna_input = QLineEdit()
-        layout.addWidget(QLabel("Vector Columna (separado por comas):"))
-        layout.addWidget(self.vector_columna_input)
+        self.main_layout.addLayout(contenedor_layout)
 
-        # Botón para ejecutar la operación
-        ejecutar_btn = QPushButton("Calcular Producto")
+    def ingresar_vectores(self):
+            
+        n = InterfazHelper.leer_entrada_dimension_vector(self.dimension_input)
+
+        if n is None:
+                return
+
+        InterfazHelper.agregar_campo_vector(self.vector_fila_inputs, self.escalares_inputs, self.contenedor_vectores_layout, n, orientacion="horizontal")
+        InterfazHelper.agregar_campo_vector(self.vector_columna_inputs, self.escalares_inputs, self.contenedor_vectores_layout, n, orientacion="vertical")
+    
+        ejecutar_btn = QPushButton("Calcular producto")
         ejecutar_btn.clicked.connect(self.calcular_producto)
-        layout.addWidget(ejecutar_btn)
+        self.contenedor_botones_layout.addWidget(ejecutar_btn)
+    
+    def procesar_entrada_vectores(self):
+        try:
+            
+            valores_escalares = [escalar[0][1] for escalar in self.escalares_inputs]
+            vector_fila_obj = InterfazHelper.procesar_entrada(self.vector_fila_inputs, [valores_escalares[0]], "horizontal")[0]
+            vector_columna_obj = InterfazHelper.procesar_entrada(self.vector_columna_inputs, [valores_escalares[1]], "vertical")[0]
+            
+            return vector_fila_obj, vector_columna_obj
 
-        # Área de texto para mostrar el resultado
-        self.resultado_texto = QTextEdit()
-        self.resultado_texto.setReadOnly(True)
-        self.resultado_texto.setFontFamily("Courier New")  # Fuente monoespaciada
-        layout.addWidget(self.resultado_texto)
+        except ValueError as e:
+            QMessageBox.critical(self, "Error al procesar entradas", str(e))
+            return []
 
-        self.setLayout(layout)
-        
     def calcular_producto(self):
         try:
-
-            # Obtener los datos de entrada y convertirlos en vectores
-            vector_fila_text = self.vector_fila_input.text().strip()
-            vector_columna_text = self.vector_columna_input.text().strip()
-
-            if not vector_fila_text or not vector_columna_text:
-                raise ValueError("Ambos vectores deben ser proporcionados.")
-
-            vector_fila = [float(x.strip()) for x in vector_fila_text.split(",")]
-            vector_columna = [float(x.strip()) for x in vector_columna_text.split(",")]
-
-            # Crear instancias de la clase Vector
-            vector_fila_obj = Vector(len(vector_fila), vector_fila, orientacion="horizontal")
-            vector_columna_obj = Vector(len(vector_columna), vector_columna, orientacion="vertical")
-
-            # Calcular el producto de vector fila por vector columna usando la nueva función
+        
+            vector_fila_obj, vector_columna_obj = self.procesar_entrada_vectores()
+            
             resultado, pasos = vector_fila_obj.producto_vector_fila_por_vector_columna(vector_columna_obj)
 
-            # Mostrar el resultado en la interfaz
-            resultado_texto = f"{pasos}\nResultado del producto: {resultado}"
-            self.resultado_texto.setText(resultado_texto)
-            
+            InterfazHelper.limpiar_resultados_texto(self.resultados_texto, self.main_layout)
+
+            self.resultados_texto = InterfazHelper.mostrar_resultados(f"{pasos}\nResultado del producto: {resultado}")
+
+            self.main_layout.addWidget(self.resultados_texto)
 
         except ValueError as e:
             QMessageBox.critical(self, "Error", str(e))
-
 
 class TransformacionMatrizVisualizadorWidget(QDialog):
     def __init__(self, visualizador):
@@ -654,229 +652,136 @@ class MultiplicacionMatrizVectorDialog(QDialog):
 
         # Layout principal vertical
         self.main_layout = QVBoxLayout(self)
+        self.main_layout.setAlignment(Qt.AlignTop)
         self.main_layout.setContentsMargins(20, 20, 20, 20)
         self.main_layout.setSpacing(10)
 
-        # Layout horizontal para matriz y vector
-        self.horizontal_layout = QHBoxLayout()
-        self.grid_layout = None
-        self.entradas = []
+        #Nivel 1
+        self.contenedor_inputs = QHBoxLayout()
+        self.main_layout.addLayout(self.contenedor_inputs)
         self.resultado_texto = None
+        
+        #Nivel 2
+        self.contenedor_matriz = QVBoxLayout()
+        self.contenedor_vector = QHBoxLayout()
+        self.contenedor_ejecutar = QHBoxLayout()
+
+        self.contenedor_inputs.addLayout(self.contenedor_matriz)
+        self.contenedor_inputs.addLayout(self.contenedor_vector)
+        self.contenedor_inputs.addLayout(self.contenedor_ejecutar)
+
+        #Nivel 3
+        self.n_input = QLineEdit()
+        self.m_input = QLineEdit()
+
+        layout_dimensiones_matriz = InterfazHelper.crear_layout_ingresar_dimensiones(
+                labels_inputs=[("Filas de la matriz:", self.n_input), ("Columnas de la matriz:", self.m_input)],
+                boton_texto="Ingresar Matriz",
+                boton_callback=lambda: self.ingresar_matriz()
+        )
+        self.contenedor_matriz.addLayout(layout_dimensiones_matriz)
+
+        self.dimension_vectores_input = QLineEdit()
+
+        contenedor_layout, self.contenedor_vectores_layout, self.contenedor_botones_layout = InterfazHelper.crear_layout_vectores(
+            n_input=self.dimension_vectores_input,
+            ingresar_dimension_callback=self.ingresar_vectores
+        )
+        self.contenedor_vector.addLayout(contenedor_layout)
+
+        # Matriz y vector que se multiplicaran al final
+        self.matriz = None
+        self.vector_columna = None
+
+        self.grid_layout = None
+        self.rectangular = True
+        self.entradas = []
         self.placeholder_respuestas = None
-        self.matriz_layout = QVBoxLayout()
-        self.vector_layout = QVBoxLayout()
         self.calc_botones_layout = QHBoxLayout()
-        self.vector_inputs = []  # Lista para almacenar entradas de vectores
+        self.vector_inputs = []
         self.escalar_inputs = []
         self.opciones_calc_combo_box = QComboBox()
         self.opciones_calc_combo_box.addItems(["","Calcular multiplicacion", "Demostrar propiedad distributiva"])
 
-        # Inputs para dimensiones de la matriz
-        self.n_input = QLineEdit()
-        self.m_input = QLineEdit()
-
-        # Crear el layout superior para ingresar dimensiones y botón de matriz
-        self.crear_layout_top(
-            labels_inputs=[("Filas de la matriz:", self.n_input), ("Columnas de la matriz:", self.m_input)],
-            boton_texto="Ingresar Matriz",
-            boton_callback=self.ingresar_matriz
-        )
-
-        # Añadir botones para gestionar vectores al vector_layout
-        agregar_vector_btn = QPushButton("Agregar Vector")
-        agregar_vector_btn.clicked.connect(self.agregar_vector)
-        self.vector_layout.addWidget(agregar_vector_btn)
-
-        eliminar_vector_btn = QPushButton("Eliminar Último Vector")
-        eliminar_vector_btn.clicked.connect(self.eliminar_vector)
-        self.vector_layout.addWidget(eliminar_vector_btn)
-
-        calcular_vector_btn = QPushButton("Calcular Vector Columna")
-        calcular_vector_btn.clicked.connect(self.calcular_vector_columna)
-        self.vector_layout.addWidget(calcular_vector_btn)
-
-        # Añadir los layouts de matriz y vector al layout horizontal
-        self.horizontal_layout.addLayout(self.matriz_layout)
-        self.horizontal_layout.addLayout(self.vector_layout)
-        
-        # Añadir el layout horizontal al layout principal
-        self.main_layout.addLayout(self.horizontal_layout)
-        
         # Añadir el botón de calcular al final del main_layout
         calcular_btn = QPushButton("Calcular")
         calcular_btn.clicked.connect(self.calc_respuesta)
         self.calc_botones_layout.addWidget(calcular_btn)
         self.calc_botones_layout.addWidget(self.opciones_calc_combo_box)
         self.main_layout.addLayout(self.calc_botones_layout)
-        
-        self.placeholder_respuestas = QTextEdit()
-        self.placeholder_respuestas.setReadOnly(True)
-        self.main_layout.addWidget(self.placeholder_respuestas)
-        
 
-    def crear_layout_top(self, labels_inputs, boton_texto, boton_callback):
-        top_layout = QVBoxLayout()
-        inputs_layout = QHBoxLayout()
+    def ingresar_vectores(self):
+       
+        n = InterfazHelper.leer_entrada_dimension_vector(self.dimension_vectores_input)
 
-        for label_text, input_widget in labels_inputs:
-            label = QLabel(label_text)
-            inputs_layout.addWidget(label)
-            inputs_layout.addWidget(input_widget)
+        if n is None:
+            return  
 
-        # Botón para ingresar la matriz
-        ingresar_btn = QPushButton(boton_texto)
-        ingresar_btn.clicked.connect(boton_callback)
+        InterfazHelper.crear_botones_vectores(lambda: InterfazHelper.agregar_campo_vector(self.vector_inputs, self.escalar_inputs, self.contenedor_vectores_layout, n),
+                                              lambda: InterfazHelper.eliminar_vector(self.vector_inputs, self.escalar_inputs, self.contenedor_vectores_layout),
+                                              lambda: self.calcular_vector_columna(), 
+                                              self.contenedor_botones_layout  
+                                              )
 
-        # Layout horizontal para centrar el botón
-        button_layout = QHBoxLayout()
-        button_layout.addStretch()
-        button_layout.addWidget(ingresar_btn)
-        button_layout.addStretch()
+        InterfazHelper.limpiar_entradas_vectores(self.vector_inputs, self.escalar_inputs, self.contenedor_vectores_layout)
 
-        top_layout.addLayout(inputs_layout)
-        top_layout.addLayout(button_layout)
-
-        # Añadir el top_layout al matriz_layout
-        self.matriz_layout.addLayout(top_layout)
-        self.stretch_item = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
-        self.matriz_layout.addItem(self.stretch_item)
-
-    def configurar_grid_layout(self, n, m, aceptar_callback):
-        # Verificar si ya existe un grid layout previo y eliminarlo
-        if self.grid_layout is not None:
-            while self.grid_layout.count():
-                widget = self.grid_layout.takeAt(0).widget()
-                if widget is not None:
-                    widget.deleteLater()
-            self.matriz_layout.removeItem(self.grid_layout)
-
-        if self.stretch_item is not None:
-            self.matriz_layout.removeItem(self.stretch_item)
-            self.stretch_item = None
-
-        # Crear un nuevo grid layout y agregarlo al layout principal
-        self.grid_layout = QGridLayout()
-        self.entradas = []
-
-        for i in range(n):
-            fila_entradas = []
-            for j in range(m):
-                entrada = QLineEdit()
-                entrada.setPlaceholderText(f"Coef {i+1},{j+1}")
-                fila_entradas.append(entrada)
-                self.grid_layout.addWidget(entrada, i, j)
-            self.entradas.append(fila_entradas)
-
-        aceptar_btn = QPushButton("Aceptar")
-        aceptar_btn.clicked.connect(aceptar_callback)
-        self.grid_layout.addWidget(aceptar_btn, n, 0, 1, m)
-        self.matriz_layout.addLayout(self.grid_layout)
+        InterfazHelper.agregar_campo_vector(self.vector_inputs, self.escalar_inputs, self.contenedor_vectores_layout,n)
+        InterfazHelper.agregar_campo_vector(self.vector_inputs, self.escalar_inputs, self.contenedor_vectores_layout,n)
 
     def ingresar_matriz(self):
         try:
-            n = int(self.n_input.text())
-            if n <= 0:
-                raise ValueError("El número de filas debe ser un número entero positivo.")
-
-            m = int(self.m_input.text())
-            if m <= 0:
-                raise ValueError("El número de columnas debe ser un número entero positivo.")
-
-            self.matriz = Matriz(n, m)
-            if self.matriz.filas == 2 and self.matriz.columnas == 2:
-                self.opciones_calc_combo_box.addItem("Visualizar transformacion")
-            self.configurar_grid_layout(n, m, self.procesar_entradas)
+            
+            InterfazHelper.limpiar_resultados_texto(self.resultado_texto, self.main_layout)
+            
+            InterfazHelper.limpiar_grid_layout(self.grid_layout, self.contenedor_matriz)
+            
+            n, m = InterfazHelper.leer_entradas_dimensiones_matrices(self.n_input, self.m_input, self.rectangular)
+            
+            self.matriz = Matriz(n,m)
+            
+            self.grid_layout, self.entradas=InterfazHelper.configurar_grid_layout(n, m, self.guardar_matriz, nombre_boton="Guardar matriz")
+        
+            self.contenedor_matriz.addLayout(self.grid_layout)
+            
         except ValueError as e:
             QMessageBox.critical(self, "Error", f"Entrada inválida: {str(e)}")
 
-    def procesar_entradas(self):
+    def guardar_matriz(self):
         try:
-            # Crear una matriz temporal para almacenar los valores ingresados
-            matriz_temp = []
-
-            for i, fila_entradas in enumerate(self.entradas):
-                fila_valores = []
-                for j, entrada in enumerate(fila_entradas):
-                    valor_texto = entrada.text()
-                    if valor_texto.strip() == "":
-                        raise ValueError(f"El campo {i+1},{j+1} está vacío.")
-
-                    # Convertir el valor de texto a float y guardarlo en la fila temporal
-                    valor = float(valor_texto)
-                    fila_valores.append(valor)
-
-                # Añadir la fila completa a la matriz temporal
-                matriz_temp.append(fila_valores)
-
-            self.matriz.matriz = matriz_temp
-            # Añadir el QTextEdit con las expresiones al layout principal
-            self.main_layout.addWidget(self.placeholder_respuestas)
-
-            # Mostrar un mensaje indicando que la matriz ha sido almacenada correctamente
+            
+            self.matriz.matriz = InterfazHelper.procesar_entradas_matrices(self.entradas)
+            
             QMessageBox.information(self, "Éxito", "Los valores de la matriz han sido guardados correctamente.")
 
         except ValueError as e:
             QMessageBox.critical(self, "Error", f"Error al ingresar datos: {str(e)}")
 
-    def agregar_vector(self):
-        par_layout = QHBoxLayout()
+    def procesar_entrada_vectores(self):
+        try:
+            
+            valores_vector = [elemento for elemento in self.vector_inputs]        
+            valores_escalar = [entrada[0][1] for entrada in self.escalar_inputs]
 
-        escalar_input = QLineEdit()
-        escalar_input.setPlaceholderText("Escalar (para combinación)")
-        self.escalar_inputs.append(escalar_input)
-        par_layout.addWidget(escalar_input)
-        vector_input = QLineEdit()
-        vector_input.setPlaceholderText("Vector (separado por comas)")
-        self.vector_inputs.append(vector_input)
-        par_layout.addWidget(vector_input)
-        self.vector_layout.addLayout(par_layout)
+            lista_vectores_escalados = InterfazHelper.procesar_entrada(valores_vector, valores_escalar)
 
-    def eliminar_vector(self):
-        if self.vector_inputs:
-            vector_input = self.vector_inputs.pop()
-            vector_input.deleteLater()
-        
-        if self.escalar_inputs:
-            escalar_input = self.escalar_inputs.pop()
-            escalar_input.deleteLater()
+            return lista_vectores_escalados
+
+        except ValueError as e:
+            QMessageBox.critical(self, "Error al procesar entradas", str(e))
+            return []
+
 
     def calcular_vector_columna(self):
         try:
-            # Crear una lista para almacenar los vectores individuales
-            vectores_individuales_a_escalar = []
-            escalar_list = []
-
-            for escalar_input in self.escalar_inputs:
-                escalar_text = escalar_input.text()
-                
-                if escalar_text.strip() == "":
-                    raise ValueError("Uno de los escalares está vacío.")                
-                try:
-                    escalar_list.append(float(escalar_text.strip()))
-                except ValueError:
-                    raise ValueError(f"Valor no válido para escalar: {escalar_text}")
-
-            if len(escalar_list) != len(self.vector_inputs):
-                raise ValueError("El número de escalares no coincide con el número de vectores.")
-
-            for index, vector_input in enumerate(self.vector_inputs):
-                vector_text = vector_input.text()
-                if vector_text.strip() == "":
-                    raise ValueError("Uno de los vectores está vacío.")
-                
-                vector_list = [float(x.strip()) for x in vector_text.split(",")]
-                
-                # Aqui se instancias los vectores
-                vector = Vector(len(vector_list), vector_list, orientacion="vertical")
-                vectores_individuales_a_escalar.append(vector)  # Guardar cada vector individual
-
-            self.lista_vectores_individuales = [vector_escalado.escalar_vector(escalar_list[index]) for vector_escalado in vectores_individuales_a_escalar]
+            lista_vectores = self.procesar_entrada_vectores()
+            if not lista_vectores:
+                return 
             
-            self.vector_columna, pasos = Vector.sumar_vectores(*self.lista_vectores_individuales)
+            resultado, pasos = Vector.sumar_vectores(*lista_vectores)
+        
+            self.vector_columna = resultado
 
-            self.mostrar_resultados(pasos)
-
-        except ValueError as e:
+        except Exception as e:
             QMessageBox.critical(self, "Error", str(e))
 
     def calc_respuesta(self):
@@ -900,126 +805,30 @@ class MultiplicacionMatrizVectorDialog(QDialog):
             QMessageBox.critical(self, "Error", f"Error al ejecutar la operación: {str(e)}")
 
     def realizar_multiplicacion_matriz_vector(self):
-        
         try:
-            # Verificar si la matriz y los vectores están ingresados correctamente
-            if not hasattr(self, 'matriz') or not hasattr(self, 'lista_vectores_individuales'):
-                raise ValueError("Debe ingresar la matriz y al menos un vector antes de realizar la multiplicación.")
+            # Verificar si la matriz y el vector columna están correctamente definidos
+            if not hasattr(self, 'matriz') or not self.vector_columna:
+                raise ValueError("Debe ingresar la matriz y calcular el vector antes de realizar la multiplicación.")
 
-            if len(self.matriz.matriz[0]) != self.vector_columna.dimension:
-                    raise ValueError(f"El número de columnas de la matriz no coincide con la longitud del vector.")
+            # Verificar la compatibilidad de las dimensiones entre la matriz y el vector
+            if len(self.matriz.matriz[0]) != len(self.vector_columna.vector):
+                raise ValueError("El número de columnas de la matriz debe coincidir con la longitud del vector.")
 
+            # Realizar la multiplicación de la matriz por el vector
             resultado_final, pasos_final = self.matriz.multiplicar_matriz_por_vector(self.vector_columna)
 
-            # Crear el mensaje de resultado y pasos
-            resultado_texto = f"Resultado de la multiplicación matriz por vector calculado: {resultado_final}\n\n"
-            pasos_texto = "Pasos detallados de la multiplicación:\n"
-            pasos_texto += pasos_final
+            # Construir el texto de los resultados
+            resultado_texto = f"Resultado de la multiplicación de matriz por vector:\n{resultado_final}\n\n"
+            pasos_texto = "Pasos detallados de la multiplicación:\n" + pasos_final
 
-            # Mostrar resultado y pasos usando la función mostrar_resultados
-            self.mostrar_resultados(resultado_texto + pasos_texto)
-
-        except ValueError as e:
-            QMessageBox.critical(self, "Error", f"Error: {str(e)}")
-            
-    def realizar_multiplicacion_con_demostracion_distributiva(self):
-        """Realiza la demostración completa de la propiedad distributiva con pasos detallados."""
-        try:
-            # Verificar si la matriz y los vectores están ingresados correctamente
-            if not hasattr(self, 'matriz') or not hasattr(self, 'lista_vectores_individuales'):
-                raise ValueError("Debe ingresar la matriz y al menos un vector antes de realizar la multiplicación.")
-
-            # Crear una lista para almacenar los resultados de la multiplicación por cada vector
-            resultados_individuales = []
-            pasos_totales = "Demostración de la Propiedad Distributiva:\n\n"
-
-            # Multiplicar la matriz por cada vector individual
-            for idx, vector in enumerate(self.lista_vectores_individuales):
-                # Verificar dimensiones antes de la multiplicación
-                if len(self.matriz.matriz[0]) != vector.dimension:
-                    raise ValueError(f"El número de columnas de la matriz no coincide con la longitud del vector {idx + 1}.")
-
-                # Multiplicar la matriz por el vector individual y almacenar el resultado y pasos
-                resultado_individual, pasos = self.matriz.multiplicar_matriz_por_vector(vector)
-                resultados_individuales.append(resultado_individual)
-                pasos_totales += f"Multiplicación de la matriz por el vector {idx + 1}:\n{pasos}\n\n"
-
-            # Sumar los resultados individuales para obtener el vector columna final
-            suma_resultado = [sum(fila) for fila in zip(*resultados_individuales)]
-            pasos_totales += f"Sumando los resultados de cada vector:\n"
-
-            # Mostrar cada suma por componente
-            for i in range(len(suma_resultado)):
-                componentes = [resultados[i] for resultados in resultados_individuales]
-                pasos_totales += f"Componente {i + 1}: " + " + ".join(map(str, componentes)) + f" = {suma_resultado[i]}\n"
-
-            pasos_totales += f"\nResultado de la suma de los productos individuales:\n{suma_resultado}\n\n"
-
-            # Calcular el producto de la matriz por el vector calculado (suma de vectores)
-            vector_calculado = Vector(len(suma_resultado), suma_resultado)
-            resultado_vector_calculado, pasos_vector_calculado = self.matriz.multiplicar_matriz_por_vector(vector_calculado)
-            pasos_totales += "Multiplicación de la matriz por el vector calculado (suma de los vectores):\n"
-            pasos_totales += f"{pasos_vector_calculado}\n"
-
-            # Verificar si los resultados coinciden
-            if resultado_vector_calculado == suma_resultado:
-                pasos_totales += "\n¡Se cumple la propiedad distributiva! El resultado es el mismo.\n"
-            else:
-                pasos_totales += "\nNo se cumple la propiedad distributiva. Hay una discrepancia en los resultados.\n"
-
-            # Mostrar los pasos usando la función mostrar_resultados
-            self.mostrar_resultados(pasos_totales)
-
-        except ValueError as e:
-            QMessageBox.critical(self, "Error", f"Error: {str(e)}")
-    def mostrar_resultados(self, texto):
-            # Eliminar el widget de placeholder_respuestas si existe
-            if self.placeholder_respuestas is not None:
-                self.main_layout.removeWidget(self.placeholder_respuestas)
-                self.placeholder_respuestas.deleteLater()  # Eliminar correctamente el widget
-                self.placeholder_respuestas = None  # Asegurarse de que no se vuelva a referenciar
-
-            # Eliminar el widget de resultados anterior si existe
-            if self.resultado_texto is not None:
-                self.main_layout.removeWidget(self.resultado_texto)
-                self.resultado_texto.deleteLater()
-                self.resultado_texto = None  # Asegurarse de que no se vuelva a referenciar
-
-            # Construir la expresión de la matriz multiplicada por el vector calculado
-            matriz_vector_texto = "Expresiones de las Operaciones:\n"
-            matriz_vector_texto += "Matriz * (Vector Calculado) = \n"
-            for fila in self.matriz.matriz:
-                matriz_vector_texto += f"{fila} * {self.vector_columna.vector}\n"
-            
-            matriz_vector_texto += "\nMatriz * (Vector 1) + Matriz * (Vector 2) + ... =\n"
-            
-            # Agregar cada operación de matriz por vector individual
-            for idx, vector in enumerate(self.lista_vectores_individuales):
-                matriz_vector_texto += f"Matriz * (Vector {idx + 1}) = \n"
-                for fila in self.matriz.matriz:
-                    matriz_vector_texto += f"{fila} * {vector.vector}\n"
-                matriz_vector_texto += "\n"
-
-            # Mostrar la matriz, los vectores y la expresión en el QTextEdit
-            self.placeholder_respuestas = QTextEdit()
-            self.placeholder_respuestas.setReadOnly(True)
-            self.placeholder_respuestas.setFontFamily("Courier New")
-            self.placeholder_respuestas.setText(matriz_vector_texto)
-
-            # Fijar el tamaño del QTextEdit para la matriz y el vector
-            self.placeholder_respuestas.setFixedSize(400, 200)  # Ajusta el tamaño según necesites
-
-            # Añadir el QTextEdit con las expresiones al layout principal
-            self.main_layout.addWidget(self.placeholder_respuestas)
-
-            # Crear un nuevo QTextEdit para mostrar el resultado de los pasos
-            self.resultado_texto = QTextEdit()
-            self.resultado_texto.setReadOnly(True)
-            self.resultado_texto.setFontFamily("Courier New")
-            self.resultado_texto.setText(texto)
-
-            # Añadir el QTextEdit al layout principal
+            # Mostrar el resultado y los pasos usando InterfazHelper
+            resultado_completo = resultado_texto + pasos_texto
+            InterfazHelper.limpiar_resultados_texto(self.resultado_texto, self.main_layout)
+            self.resultado_texto = InterfazHelper.mostrar_resultados(resultado_completo)
             self.main_layout.addWidget(self.resultado_texto)
+
+        except ValueError as e:
+            QMessageBox.critical(self, "Error", f"Error: {str(e)}")
 
 class OperacionesMatrizDialog(QDialog):
     def __init__(self):
@@ -1387,7 +1196,74 @@ class MultiplicacionMatricesDialog(QDialog):
 
         except Exception as e:
             QMessageBox.critical(self, "Error", str(e))
+
+class DeterminanteDialog(QDialog):
+    def __init__(self):
+        super().__init__()
+        
+        self.setGeometry(100, 100, 400, 300)
+        self.setWindowTitle("Ingresar Matriz")
+        
+        # Layout principal vertical
+        self.main_layout = QVBoxLayout(self)
+        self.main_layout.setContentsMargins(20, 20, 20, 20)
+        self.main_layout.setSpacing(10)
+        self.main_layout.setAlignment(Qt.AlignTop)
+        
+        self.entradas = []
+        self.grid_layout = None
+        self.resultado_texto = None
+        self.placeholder_respuestas = None
+        self.matriz = None
+        
+        # Inputs para dimensiones de la matriz
+        self.n_input = QLineEdit()
+        self.m_input = self.n_input
+         
+        layout_dimensiones_matriz = InterfazHelper.crear_layout_ingresar_dimensiones(
+            labels_inputs=[("Dimensiones de la matriz:", self.n_input)],
+            boton_texto="Ingresar Matriz",
+            boton_callback=lambda: self.ingresar_matriz()
+         )
+        
+
+        self.main_layout.addLayout(layout_dimensiones_matriz)
+         
+    def ingresar_matriz(self):
+        try:
+            InterfazHelper.limpiar_resultados_texto(self.resultado_texto, self.main_layout)
+            InterfazHelper.limpiar_grid_layout(self.grid_layout, self.main_layout)
             
+            n, m = InterfazHelper.leer_entradas_dimensiones_matrices(self.n_input, self.m_input, rectangular=True)
+            
+            self.matriz = Matriz(n, m)
+            
+            self.grid_layout, self.entradas = InterfazHelper.configurar_grid_layout(n, m, self.calcular_determinante, nombre_boton="Calcular determinante")
+        
+            self.main_layout.addLayout(self.grid_layout)
+            
+        except ValueError as e:
+            QMessageBox.critical(self, "Error", f"Entrada inválida: {str(e)}")
+        
+    
+    def calcular_determinante(self):
+        try:
+            self.matriz.matriz = InterfazHelper.procesar_entradas_matrices(self.entradas)
+            
+            # Calcular el determinante
+            det = self.matriz.calcular_determinante()
+            
+            InterfazHelper.limpiar_resultados_texto(self.resultado_texto, self.main_layout)
+            
+            # Mostrar el determinante en la interfaz
+            self.resultado_texto = InterfazHelper.mostrar_resultados(
+                f"Determinante:\n{det}"
+            )
+            self.main_layout.addWidget(self.resultado_texto)
+            
+        except ValueError as e:
+            QMessageBox.critical(self, "Error", f"Error al ingresar datos: {str(e)}")
+
 class VentanaPrincipal(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -1429,6 +1305,9 @@ class VentanaPrincipal(QMainWindow):
         self.multiplicar_matrices_btn = QPushButton("Multiplicar Matrices")
         self.multiplicar_matrices_btn.clicked.connect(self.mostrar_multiplicacion_matrices_dialog)
         self.layout.addWidget(self.multiplicar_matrices_btn)
+        self.determinantes_btn = QPushButton("Calcular Determinante")
+        self.determinantes_btn.clicked.connect(self.mostrar_determinante_dialog)
+        self.layout.addWidget(self.determinantes_btn)
         
         self.layout.addStretch()
 
@@ -1458,6 +1337,10 @@ class VentanaPrincipal(QMainWindow):
         
     def mostrar_multiplicacion_matrices_dialog(self):
         dialog = MultiplicacionMatricesDialog()
+        dialog.exec_()
+    
+    def mostrar_determinante_dialog(self):
+        dialog = DeterminanteDialog()
         dialog.exec_()
 
 # Iniciar la aplicación
