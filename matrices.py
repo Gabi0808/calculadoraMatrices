@@ -1,4 +1,4 @@
-from utilidades import *
+from utilidades import MatrizHelper, GestorPasos, Formateador
 from vectores import Vector
 
 class Matriz:
