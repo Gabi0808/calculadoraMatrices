@@ -1,11 +1,20 @@
 from PyQt5.QtWidgets import (
     QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QLineEdit,
-    QPushButton, QMessageBox, QTextEdit, QWidget, QLayout
+    QPushButton, QMessageBox, QTextEdit, QWidget, QLayout, QDockWidget
 )
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QPixmap
 from matrices import Matriz
 from vectores import Vector
+from matplotlib import pyplot as plt
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
+from matplotlib.figure import Figure
+from io import BytesIO
 from visualizador import *
+from PyQt5.QtCore import Qt
+from CustomPlotCanvas import CustomPlotCanvas
+
 
 class CustomLineEdit(QLineEdit):
     def keyPressEvent(self, event):
@@ -18,30 +27,22 @@ class InterfazHelperMatriz():
     def __init__(self):
         pass
 
-    @staticmethod    
-    def crear_layout_ingresar_dimensiones(labels_inputs, boton_texto, boton_callback):
-        top_layout = QVBoxLayout()
-        inputs_layout = QHBoxLayout()
+    @staticmethod
+    def crear_canvas_widget(parent=None):
+        # Crear el canvas personalizado y la barra de herramientas de navegación
+        canvas = CustomPlotCanvas(parent)
+        toolbar = NavigationToolbar(canvas, parent)
 
-        for label_text, input_widget in labels_inputs:
-            label = QLabel(label_text)
-            inputs_layout.addWidget(label)
-            inputs_layout.addWidget(input_widget)
+        # Crear un contenedor para la barra de herramientas y el canvas
+        layout = QVBoxLayout()
+        layout.addWidget(toolbar)
+        layout.addWidget(canvas)
 
-        # Botón para ingresar la matriz
-        ingresar_btn = QPushButton(boton_texto)
-        ingresar_btn.clicked.connect(boton_callback)
+        # Crear un widget contenedor y establecer el layout
+        container_widget = QWidget()
+        container_widget.setLayout(layout)
 
-        # Layout horizontal para centrar el botón
-        button_layout = QHBoxLayout()
-        button_layout.addStretch()
-        button_layout.addWidget(ingresar_btn)
-        button_layout.addStretch()
-
-        top_layout.addLayout(inputs_layout)
-        top_layout.addLayout(button_layout)
-        
-        return top_layout
+        return container_widget, canvas
      
     @staticmethod 
     def limpiar_grid_layout(grid_layout, target_layout):
@@ -470,5 +471,122 @@ class InterfazHelperMatriz():
             QMessageBox.critical(None, "Error al procesar entradas", str(e))
             return []
 
-class InterfazHelperAnalisisNumerico():
-    pass
+class InterfazHelperAnalisisNumerico:
+    @staticmethod
+    def crear_label(texto, alineacion=Qt.AlignLeft):
+        label = QLabel(texto)
+        label.setAlignment(alineacion)
+        return label
+
+    @staticmethod
+    def crear_input(placeholder_text="", texto_cambio_callback=None):
+        input_field = QLineEdit()
+        input_field.setPlaceholderText(placeholder_text) 
+        if texto_cambio_callback:
+            input_field.textChanged.connect(texto_cambio_callback)
+        return input_field
+
+    @staticmethod
+    def crear_boton(texto, callback):
+        boton = QPushButton(texto)
+        boton.clicked.connect(callback)
+        return boton
+
+    @staticmethod
+    def crear_text_edit(solo_lectura=True, fuente="Courier New"):
+        text_edit = QTextEdit()
+        text_edit.setReadOnly(solo_lectura)
+        text_edit.setFontFamily(fuente)
+        return text_edit
+
+    @staticmethod
+    def mostrar_latex(latex_str, latex_label):
+        fig, ax = plt.subplots(figsize=(3, 0.5))
+        ax.text(0.5, 0.5, f"${latex_str}$", horizontalalignment='center', verticalalignment='center', fontsize=12)
+        ax.axis('off')
+        buffer = BytesIO()
+        fig.savefig(buffer, format='png', bbox_inches='tight', pad_inches=0.1)
+        buffer.seek(0)
+        plt.close(fig)
+        pixmap = QPixmap()
+        pixmap.loadFromData(buffer.getvalue())
+        latex_label.setPixmap(pixmap)
+
+    @staticmethod
+    def crear_canvas_widget(parent=None):
+        # Crear el canvas personalizado y la barra de herramientas de navegación
+        canvas = CustomPlotCanvas(parent)
+        toolbar = NavigationToolbar(canvas, parent)
+
+        # Crear un contenedor para la barra de herramientas y el canvas
+        layout = QVBoxLayout()
+        layout.addWidget(toolbar)
+        layout.addWidget(canvas)
+
+        # Crear un widget contenedor y establecer el layout
+        container_widget = QWidget()
+        container_widget.setLayout(layout)
+
+        return container_widget, canvas
+    
+    @staticmethod
+    def agregar_botones_simbolos(layout, input_funcion):
+        simbolos = {
+            "√": "sqrt(",    # Raíz cuadrada
+            "sin": "sin(",   # Seno
+            "cos": "cos(",   # Coseno
+            "tan": "tan(",   # Tangente
+            "ln": "ln(",     # Logaritmo natural
+            "log": "log(",   # Logaritmo
+            "^": "**",       # Exponente
+            "/": "/",        # Fracción
+            "π": "pi",       # Pi
+            "e": "E"         # Número de Euler
+        }
+        
+        for simbolo, expresion in simbolos.items():
+            boton = QPushButton(simbolo)
+            boton.clicked.connect(lambda _, exp=expresion: InterfazHelperAnalisisNumerico.insertar_simbolo(input_funcion, exp))
+            layout.addWidget(boton)
+
+    @staticmethod
+    def insertar_simbolo(input_funcion, simbolo):
+        cursor_pos = input_funcion.cursorPosition()
+        texto_actual = input_funcion.text()
+        nuevo_texto = texto_actual[:cursor_pos] + simbolo + texto_actual[cursor_pos:]
+        input_funcion.setText(nuevo_texto)
+        input_funcion.setFocus()
+        input_funcion.setCursorPosition(cursor_pos + len(simbolo))
+
+    @staticmethod
+    def crear_intervalos_input(texto_a, texto_b):
+        contenedor_intervalos = QHBoxLayout()
+        label_a = InterfazHelperAnalisisNumerico.crear_label(texto_a)
+        input_a = InterfazHelperAnalisisNumerico.crear_input()
+        label_b = InterfazHelperAnalisisNumerico.crear_label(texto_b)
+        input_b = InterfazHelperAnalisisNumerico.crear_input()
+
+        contenedor_intervalos.addWidget(label_a)
+        contenedor_intervalos.addWidget(input_a)
+        contenedor_intervalos.addWidget(label_b)
+        contenedor_intervalos.addWidget(input_b)
+
+        return contenedor_intervalos, input_a, input_b
+    
+    @staticmethod
+    def crear_funcion_input_latex(texto, callback_actualizar_latex):
+        
+        contenedor_funcion = QVBoxLayout()
+        latex_label = InterfazHelperAnalisisNumerico.crear_label("", Qt.AlignCenter)
+        label_funcion = InterfazHelperAnalisisNumerico.crear_label(texto)
+        input_funcion = InterfazHelperAnalisisNumerico.crear_input("", callback_actualizar_latex)
+
+        simbolos_layout = QHBoxLayout()
+        InterfazHelperAnalisisNumerico.agregar_botones_simbolos(simbolos_layout, input_funcion)
+        
+        contenedor_funcion.addWidget(latex_label)
+        contenedor_funcion.addWidget(label_funcion)
+        contenedor_funcion.addWidget(input_funcion)
+        contenedor_funcion.addLayout(simbolos_layout)
+
+        return contenedor_funcion, input_funcion, latex_label

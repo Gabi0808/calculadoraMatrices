@@ -409,7 +409,7 @@ class MultiplicacionMatrizVectorDialog(QWidget):
         self.vector_inputs = []
         self.escalar_inputs = []
         self.opciones_calc_combo_box = QComboBox()
-        self.opciones_calc_combo_box.addItems(["","Calcular multiplicacion", "Demostrar propiedad distributiva"])
+        self.opciones_calc_combo_box.addItems(["","Calcular multiplicacion", "Visualizar transformacion"])
 
         # Añadir el botón de calcular al final del main_layout
         calcular_btn = QPushButton("Calcular")
@@ -482,8 +482,6 @@ class MultiplicacionMatrizVectorDialog(QWidget):
             
             if opcion_seleccionada == "Calcular multiplicacion":
                 self.realizar_multiplicacion_matriz_vector()
-            elif opcion_seleccionada == "Demostrar propiedad distributiva":
-                self.realizar_multiplicacion_con_demostracion_distributiva()
             elif opcion_seleccionada == "Visualizar transformacion":
                 if not hasattr(self, 'matriz') or not hasattr(self, 'vector_columna'):
                     raise ValueError("La matriz y el vector deben estar correctamente definidos antes de visualizar la transformación.")

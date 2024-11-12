@@ -9,7 +9,7 @@ from PyQt5.QtCore import Qt
 from interfazMatrices import (IngresarMatrizDialog, OperacionesVectorDialog, ProductoVectorDialog, MultiplicacionMatrizVectorDialog,
                               OperacionesMatrizDialog, MultiplicacionMatricesDialog, TranspuestaDialog, DeterminanteDialog,
                               CramerDialog, InversaTab)
-from interfazAnalisisNumerico import BiseccionTab  # Importamos el método de bisección
+from interfazAnalisisNumerico import BiseccionTab, NewtonRaphsonTab  # Importamos el método de bisección
 
 
 class MatricesScreen(QWidget):
@@ -80,6 +80,7 @@ class AnalisisNumericoScreen(QWidget):
         
         # Botón para el método de Bisección
         self.crear_boton("Método de Bisección", BiseccionTab)
+        self.crear_boton("Método Newton-Raphson", NewtonRaphsonTab)
         
         self.boton_layout.addStretch()
         self.boton_panel.setLayout(self.boton_layout)
@@ -134,6 +135,7 @@ class VentanaPrincipal(QMainWindow):
         super().__init__()
         self.setWindowTitle("Calculadora de Álgebra")
         self.setGeometry(100, 100, 600, 400)
+        self.resize(1700, 800)
 
         # Crear el QStackedWidget para cambiar entre pantallas
         self.stacked_widget = QStackedWidget()
