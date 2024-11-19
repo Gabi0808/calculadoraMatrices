@@ -174,3 +174,21 @@ class Funcion:
         
         registro += f"\nLímite de iteraciones alcanzado ({max_iteraciones}). Raíz aproximada: {c_anterior}\n"
         return c_anterior, registro, puntos
+    
+
+    def secante(self, x0, x1, tolerancia=1e-6, max_iter=100):
+        registro = ""
+        puntos_por_raiz = []
+        for iteracion in range(max_iter):
+            f_x0 = self.evaluar_funcion(x0)
+            f_x1 = self.evaluar_funcion(x1)
+            if f_x1 - f_x0 == 0:
+                break
+            x2 = x1 - f_x1 * (x1 - x0) / (f_x1 - f_x0)
+            puntos_por_raiz.append((x0, x1))
+            registro += f"Iteración {iteracion}: x0={x0}, x1={x1}, x2={x2}\n"
+            if abs(x2 - x1) < tolerancia:
+                return x2, registro, puntos_por_raiz
+            x0, x1 = x1, x2
+        return None, "No se encontró una raíz en el límite de iteraciones.", puntos_por_raiz
+

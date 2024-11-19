@@ -84,7 +84,7 @@ class AnalisisNumericoScreen(QWidget):
         self.crear_boton("Método de Bisección", BiseccionTab)
         self.crear_boton("Método Newton-Raphson", NewtonRaphsonTab)
         self.crear_boton("Método de Falsa Posición", FalsaPosicionTab)
-        self.crear_boton("Método de Falsa Posición", SecanteTab)
+        self.crear_boton("Método de Secante", SecanteTab)
         
         self.boton_layout.addStretch()
         self.boton_panel.setLayout(self.boton_layout)
