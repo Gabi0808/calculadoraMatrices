@@ -476,3 +476,152 @@ class FalsaPosicionTab(QWidget):
 
         self.canvas.ax.legend()
         self.canvas.draw()
+        
+class SecanteTab(QWidget):
+    def __init__(self):
+        super().__init__()
+
+        splitter = QSplitter(Qt.Horizontal)
+
+        # Panel izquierdo (Entradas)
+        entradas_widget = QWidget()
+        entradas_layout = QVBoxLayout(entradas_widget)
+        entradas_layout.setAlignment(Qt.AlignTop)
+
+        # Crear entradas para función, valores iniciales y botones
+        contenedor_funcion, self.input_funcion, self.latex_label = InterfazHelperAnalisisNumerico.crear_funcion_input_latex(
+            texto="Ingrese la función en términos de 'x':",
+            callback_actualizar_latex=self.actualizar_latex
+        )
+        contenedor_intervalos, self.input_x0, self.input_x1 = InterfazHelperAnalisisNumerico.crear_intervalos_input(
+            "Ingrese el valor de x₀:",
+            "Ingrese el valor de x₁:"
+        )
+
+        self.boton_calcular = InterfazHelperAnalisisNumerico.crear_boton(
+            "Calcular Método de la Secante",
+            self.calcular_secante
+        )
+        self.boton_siguiente = InterfazHelperAnalisisNumerico.crear_boton(
+            "Siguiente Iteración",
+            self.siguiente_iteracion
+        )
+        self.boton_siguiente.setEnabled(False)
+
+        # Campo para mostrar resultados
+        self.text_edit_resultado = InterfazHelperAnalisisNumerico.crear_text_edit()
+
+        # Agregar widgets al layout de entrada
+        entradas_layout.addLayout(contenedor_funcion)
+        entradas_layout.addLayout(contenedor_intervalos)
+        entradas_layout.addWidget(self.boton_calcular)
+        entradas_layout.addWidget(self.boton_siguiente)
+        entradas_layout.addWidget(QLabel("Registro de iteraciones:"))
+        entradas_layout.addWidget(self.text_edit_resultado)
+
+        # Panel derecho (Gráficos)
+        grafico_widget, self.canvas = InterfazHelperAnalisisNumerico.crear_canvas_widget(self)
+
+        splitter.addWidget(entradas_widget)
+        splitter.addWidget(grafico_widget)
+        splitter.setSizes([900, 800])
+
+        # Layout principal
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(splitter)
+
+        # Variables de control
+        self.iteracion_actual = 0
+        self.x_prev = 0
+        self.x_curr = 0
+        self.registro = ""
+        self.xlim = (-50, 50)
+        self.ylim = (-50, 50)
+        self.initial_xlim = (-5, 5)
+        self.initial_ylim = (-5, 5)
+
+        self.timer = QTimer()
+        self.timer.setInterval(200)
+        self.timer.timeout.connect(self.actualizar_latex_async)
+        self.render_thread = None
+
+    def actualizar_latex(self):
+        self.timer.start()
+
+    def actualizar_latex_async(self):
+        self.timer.stop()
+        funcion_texto = self.input_funcion.text()
+        try:
+            self.funcion = Funcion(funcion_texto)
+            latex_str = sym.latex(self.funcion.funcion)
+            
+            if self.render_thread is None or not self.render_thread.isRunning():
+                self.render_thread = RenderThread(latex_str)
+                self.render_thread.update_image_signal.connect(self.mostrar_imagen)
+                self.render_thread.start()
+                
+            self.graficar_funcion_async()
+            
+        except Exception:
+            self.latex_label.clear()
+
+    def mostrar_imagen(self, pixmap):
+        self.latex_label.setPixmap(pixmap)
+
+    def calcular_secante(self):
+        try:
+            funcion_texto = self.input_funcion.text()
+            x0 = float(self.input_x0.text())
+            x1 = float(self.input_x1.text())
+            self.funcion = Funcion(funcion_texto)
+
+            self.raiz, self.registro, self.puntos_por_raiz = self.funcion.secante(x0, x1, tolerancia=1e-6)
+            self.iteracion_actual = 0
+
+            if self.raiz:
+                self.boton_siguiente.setEnabled(True)
+                self.text_edit_resultado.setText(self.registro)
+
+                # Graficar los puntos de la primera iteración
+                x_prev, x_curr = self.puntos_por_raiz[self.iteracion_actual]
+                self.actualizar_grafico(x_prev, x_curr)
+            else:
+                QMessageBox.information(self, "Resultado", "No se encontraron raíces.")
+        except ValueError as e:
+            QMessageBox.critical(self, "Error", f"Entrada no válida: {e}")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Ocurrió un error: {e}")
+
+    def siguiente_iteracion(self):
+        if self.iteracion_actual < len(self.puntos_por_raiz) - 1:
+            self.iteracion_actual += 1
+            x_prev, x_curr = self.puntos_por_raiz[self.iteracion_actual]
+            self.actualizar_grafico(x_prev, x_curr)
+        else:
+            QMessageBox.information(self, "Fin", "Todas las iteraciones han terminado.")
+            self.boton_siguiente.setEnabled(False)
+
+    def actualizar_grafico(self, x_prev, x_curr):
+        if not hasattr(self, 'grafico_fijo'):
+            self.graficar_funcion_async()
+            self.grafico_fijo = True
+
+        # Limpiar puntos de la iteración anterior
+        [p.remove() for p in getattr(self, 'puntos_iteracion', []) if p]
+        self.puntos_iteracion = []
+
+        # Graficar puntos de la iteración actual
+        f_x_prev = self.funcion.evaluar_funcion(x_prev)
+        f_x_curr = self.funcion.evaluar_funcion(x_curr)
+
+        if f_x_prev is not None:
+            self.puntos_iteracion.append(self.canvas.ax.plot(x_prev, f_x_prev, 'ro', label='x_prev')[0])
+        if f_x_curr is not None:
+            self.puntos_iteracion.append(self.canvas.ax.plot(x_curr, f_x_curr, 'go', label='x_curr')[0])
+
+        # Graficar la línea secante
+        if f_x_prev is not None and f_x_curr is not None:
+            self.canvas.ax.plot([x_prev, x_curr], [f_x_prev, f_x_curr], 'k--', label='Secante')
+
+        self.canvas.ax.legend()
+        self.canvas.draw()

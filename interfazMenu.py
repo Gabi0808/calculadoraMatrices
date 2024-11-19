@@ -9,7 +9,7 @@ from PyQt5.QtCore import Qt
 from interfazMatrices import (IngresarMatrizDialog, OperacionesVectorDialog, ProductoVectorDialog, MultiplicacionMatrizVectorDialog,
                               OperacionesMatrizDialog, MultiplicacionMatricesDialog, TranspuestaDialog, DeterminanteDialog,
                               CramerDialog, InversaTab)
-from interfazAnalisisNumerico import BiseccionTab, NewtonRaphsonTab, FalsaPosicionTab
+from interfazAnalisisNumerico import BiseccionTab, NewtonRaphsonTab, FalsaPosicionTab, SecanteTab
 from interfazHelper import AnimatedButton
 
 def apply_stylesheet(app, style_path):
@@ -84,6 +84,7 @@ class AnalisisNumericoScreen(QWidget):
         self.crear_boton("Método de Bisección", BiseccionTab)
         self.crear_boton("Método Newton-Raphson", NewtonRaphsonTab)
         self.crear_boton("Método de Falsa Posición", FalsaPosicionTab)
+        self.crear_boton("Método de Falsa Posición", SecanteTab)
         
         self.boton_layout.addStretch()
         self.boton_panel.setLayout(self.boton_layout)
