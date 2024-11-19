@@ -1,0 +1,135 @@
+/* Fondo general de la aplicación */
+QWidget {
+    background-color: #f5f5dc; /* Color crema */
+    color: #4b4b4b; /* Color de texto oscuro suave */
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+}
+
+/* Estilo para todos los botones */
+QPushButton {
+    background-color: rgba(255, 255, 255, 0.6); /* Fondo semitransparente crema */
+    color: #4b4b4b;
+    border: 2px solid #a2d5ab; /* Borde verde pastel */
+    border-radius: 8px;
+    padding: 10px 15px;
+    font-weight: bold;
+}
+
+/* Botón al pasar el cursor */
+QPushButton:hover {
+    background-color: rgba(162, 213, 171, 0.3); /* Fondo verde pastel más claro */
+    border-color: #79b38a; /* Borde verde más oscuro */
+    color: #ffffff; /* Texto blanco */
+}
+
+/* Botón al hacer clic */
+QPushButton:pressed {
+    background-color: rgba(121, 179, 138, 0.7); /* Fondo verde pastel oscuro */
+    border-color: #579065; /* Borde verde más profundo */
+}
+
+/* Estilo para todos los QLabel */
+QLabel {
+    color: #4b4b4b; /* Color de texto oscuro suave */
+    font-size: 14px;
+}
+
+/* Campos de texto con efecto de borde inferior */
+QLineEdit {
+    background-color: #fafaf0; /* Fondo crema más claro */
+    color: #4b4b4b;
+    border: none;
+    border-bottom: 2px solid #a2d5ab; /* Borde inferior verde pastel */
+    padding: 8px;
+    font-size: 14px;
+}
+
+QLineEdit:focus {
+    border-bottom: 2px solid #79b38a; /* Cambia a verde más oscuro al enfocarse */
+}
+
+/* Barra de progreso */
+QProgressBar {
+    background-color: #fafaf0;
+    border-radius: 10px;
+    text-align: center;
+    color: #4b4b4b;
+}
+
+QProgressBar::chunk {
+    background-color: #a2d5ab; /* Verde pastel para la barra de progreso */
+    border-radius: 10px;
+}
+
+/* Sliders */
+QSlider::groove:horizontal {
+    height: 6px;
+    background: #fafaf0;
+    border-radius: 3px;
+}
+
+QSlider::handle:horizontal {
+    background: #a2d5ab;
+    border: 2px solid #4b4b4b;
+    width: 16px;
+    height: 16px;
+    border-radius: 8px;
+    margin: -5px 0;
+}
+
+QSlider::handle:horizontal:hover {
+    background: #79b38a; /* Cambia a verde más oscuro al pasar el cursor */
+}
+
+/* Tabs */
+QTabBar::tab {
+    background: #fafaf0;
+    color: #4b4b4b;
+    padding: 10px 15px;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    margin-right: 2px;
+}
+
+QTabBar::tab:selected {
+    background: #a2d5ab; /* Fondo verde pastel */
+    color: white;
+}
+
+QTabBar::tab:hover {
+    background: #e8e8d0; /* Fondo crema claro */
+}
+
+/* Cuadro de mensajes y otros diálogos */
+QMessageBox {
+    background-color: #f5f5dc;
+    color: #4b4b4b;
+    border: 2px solid #a2d5ab;
+    border-radius: 10px;
+}
+
+/* Scrollbars */
+QScrollBar:vertical, QScrollBar:horizontal {
+    background-color: #fafaf0;
+    width: 10px;
+    height: 10px;
+    border: none;
+}
+
+QScrollBar::handle:vertical, QScrollBar::handle:horizontal {
+    background-color: #a2d5ab;
+    min-height: 20px;
+    min-width: 20px;
+    border-radius: 5px;
+}
+
+QScrollBar::handle:vertical:hover, QScrollBar::handle:horizontal:hover {
+    background-color: #79b38a; /* Verde más oscuro */
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical,
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+    background: none;
+    border: none;
+}

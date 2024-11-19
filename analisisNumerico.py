@@ -62,7 +62,7 @@ class Funcion:
                 return c, registro, puntos
 
             error = self.calcular_error_relativo(c, c_anterior)
-            registro += f"Iteración {iteracion}: c = {c}, Error relativo = {error:.6f}%\n"
+            registro += f"Iteración {iteracion}: c = {c}, Error absoluto = {error:.6f}%\n"
             puntos.append((a, b, c))
 
             if self.evaluar_funcion(a) * f_c < 0:
@@ -100,6 +100,7 @@ class Funcion:
         registro = "Iteración del método de Newton-Raphson:\n"
         iteracion = 1
         x_anterior = x0
+        puntos = []  # Lista para almacenar los puntos de cada iteración
 
         while iteracion <= max_iteraciones:
             f_x = self.evaluar_funcion(x_anterior)
@@ -111,15 +112,65 @@ class Funcion:
 
             x_nuevo = x_anterior - f_x / f_x_derivada
             error = self.calcular_error_relativo(x_nuevo, x_anterior)
+            puntos.append((x_anterior, x_nuevo, error))  # Guardar el punto actual y el error en la lista
 
             registro += f"Iteración {iteracion}: x = {x_nuevo}, Error relativo = {error:.6f}%\n"
 
             if error < tolerancia:
-                registro += f"\nRaíz aproximada encontrada: {x_nuevo}\n"
-                return x_nuevo, registro
+                registro += f"\nEl método converge en la iteración {iteracion}. La raíz aproximada es: {x_nuevo}\n"
+                return x_nuevo, registro, puntos
 
             x_anterior = x_nuevo
             iteracion += 1
 
         registro += "\nNo se alcanzó la tolerancia especificada dentro del número máximo de iteraciones."
-        return None, registro
+        return None, registro, puntos
+    
+    def falsa_posicion(self, a, b, tolerancia=1e-6, max_iteraciones=100):
+        registro = "Iteración del método de Falsa Posición:\n"
+        puntos = []
+        iteracion = 1
+        c_anterior = a
+        
+        while iteracion <= max_iteraciones:
+            f_a = self.evaluar_funcion(a)
+            f_b = self.evaluar_funcion(b)
+            
+            # Verificar que f(a) y f(b) tienen signos opuestos
+            if f_a * f_b > 0:
+                registro += "Error: Los extremos a y b no encierran una raíz.\n"
+                return None, registro, puntos
+            
+            # Calcular c con la fórmula corregida
+            if f_b - f_a == 0:
+                registro += "Error: División por cero en la fórmula de c.\n"
+                return None, registro, puntos
+            
+            c = b - f_b * (b - a) / (f_b - f_a)
+            f_c = self.evaluar_funcion(c)
+            
+            # Guardar los puntos
+            puntos.append((a, b, c))
+            
+            # Registro de la iteración
+            error = abs(c - c_anterior)
+            registro += f"Iteración {iteracion}: a = {a}, b = {b}, c = {c}, f(c) = {f_c}, Error absoluto = {error:.6e}\n"
+            
+            # Verificar tolerancia o raíz exacta
+            if abs(f_c) < tolerancia or error < tolerancia:
+                registro += f"\nRaíz aproximada encontrada: {c} en iteración {iteracion}.\n"
+                return c, registro, puntos
+            
+            # Actualizar límites para la siguiente iteración
+            if f_a * f_c < 0:
+                b = c
+                f_b = f_c
+            else:
+                a = c
+                f_a = f_c
+            
+            c_anterior = c
+            iteracion += 1
+        
+        registro += f"\nLímite de iteraciones alcanzado ({max_iteraciones}). Raíz aproximada: {c_anterior}\n"
+        return c_anterior, registro, puntos

@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import (
     QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QLineEdit,
     QPushButton, QMessageBox, QTextEdit, QWidget, QLayout, QDockWidget
 )
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QThread, pyqtSignal, QPropertyAnimation, QEasingCurve
 from PyQt5.QtGui import QPixmap
 from matrices import Matriz
 from vectores import Vector
@@ -15,6 +15,47 @@ from visualizador import *
 from PyQt5.QtCore import Qt
 from CustomPlotCanvas import CustomPlotCanvas
 
+class AnimatedButton(QPushButton):
+    def __init__(self, text):
+        super().__init__(text)
+        
+        # Crear animación para el cambio de tamaño
+        self.bg_animation = QPropertyAnimation(self, b"geometry")
+        self.bg_animation.setDuration(300)
+        self.bg_animation.setEasingCurve(QEasingCurve.InOutQuad)
+
+    def enterEvent(self, event):
+        # Iniciar animación de hover
+        self.bg_animation.setStartValue(self.geometry())
+        self.bg_animation.setEndValue(self.geometry().adjusted(-2, -2, 2, 2))
+        self.bg_animation.start()
+        super().enterEvent(event)
+
+    def leaveEvent(self, event):
+        # Iniciar animación para restaurar tamaño
+        self.bg_animation.setStartValue(self.geometry())
+        self.bg_animation.setEndValue(self.geometry().adjusted(2, 2, -2, -2))
+        self.bg_animation.start()
+        super().leaveEvent(event)
+
+class RenderThread(QThread):
+    update_image_signal = pyqtSignal(QPixmap)
+
+    def __init__(self, latex_str):
+        super().__init__()
+        self.latex_str = latex_str
+
+    def run(self):
+        fig, ax = plt.subplots(figsize=(3, 0.5))
+        ax.text(0.5, 0.5, f"${self.latex_str}$", horizontalalignment='center', verticalalignment='center', fontsize=12)
+        ax.axis('off')
+        buffer = BytesIO()
+        fig.savefig(buffer, format='png', bbox_inches='tight', pad_inches=0.1)
+        buffer.seek(0)
+        plt.close(fig)
+        pixmap = QPixmap()
+        pixmap.loadFromData(buffer.getvalue())
+        self.update_image_signal.emit(pixmap)
 
 class CustomLineEdit(QLineEdit):
     def keyPressEvent(self, event):
@@ -24,25 +65,27 @@ class CustomLineEdit(QLineEdit):
             super().keyPressEvent(event)
 
 class InterfazHelperMatriz():
-    def __init__(self):
-        pass
 
-    @staticmethod
-    def crear_canvas_widget(parent=None):
-        # Crear el canvas personalizado y la barra de herramientas de navegación
-        canvas = CustomPlotCanvas(parent)
-        toolbar = NavigationToolbar(canvas, parent)
-
-        # Crear un contenedor para la barra de herramientas y el canvas
-        layout = QVBoxLayout()
-        layout.addWidget(toolbar)
-        layout.addWidget(canvas)
-
-        # Crear un widget contenedor y establecer el layout
-        container_widget = QWidget()
-        container_widget.setLayout(layout)
-
-        return container_widget, canvas
+    @staticmethod    
+    def crear_layout_ingresar_dimensiones(labels_inputs, boton_texto, boton_callback):
+        top_layout = QVBoxLayout()
+        inputs_layout = QHBoxLayout()
+        for label_text, input_widget in labels_inputs:
+            label = QLabel(label_text)
+            inputs_layout.addWidget(label)
+            inputs_layout.addWidget(input_widget)
+        # Botón para ingresar la matriz
+        ingresar_btn = QPushButton(boton_texto)
+        ingresar_btn.clicked.connect(boton_callback)
+        # Layout horizontal para centrar el botón
+        button_layout = QHBoxLayout()
+        button_layout.addStretch()
+        button_layout.addWidget(ingresar_btn)
+        button_layout.addStretch()
+        top_layout.addLayout(inputs_layout)
+        top_layout.addLayout(button_layout)
+        
+        return top_layout
      
     @staticmethod 
     def limpiar_grid_layout(grid_layout, target_layout):
@@ -90,7 +133,7 @@ class InterfazHelperMatriz():
             return n, m
             
         except ValueError as e:
-            QMessageBox.critical("Error", f"Entrada inválida: {str(e)}")
+            QMessageBox.critical(None,"Error", f"Entrada invalida: {str(e)}")
     
     @staticmethod
     def procesar_entradas_matrices(entradas):
@@ -117,8 +160,12 @@ class InterfazHelperMatriz():
         try:
             InterfazHelperMatriz.limpiar_resultados_texto(resultado_texto, main_layout)
             InterfazHelperMatriz.limpiar_grid_layout(grid_layout, target_layout)
-
-            # Leer dimensiones
+            
+            dimensiones = InterfazHelperMatriz.leer_entradas_dimensiones_matrices(n_input, m_input, rectangular=rectangular)
+    
+            if dimensiones is None:
+                return
+            
             n, m = InterfazHelperMatriz.leer_entradas_dimensiones_matrices(n_input, m_input, rectangular=rectangular)
 
             nueva_matriz = Matriz(n, m)
@@ -132,7 +179,7 @@ class InterfazHelperMatriz():
             target_layout.addLayout(instancia.grid_layout)
         
         except ValueError as e:
-            QMessageBox.critical(None, "Error", f"Entrada inválida: {str(e)}")
+            QMessageBox.critical(None, "Error", f"Entrada invalida: {str(e)}")
             return None, None, None
 
     @staticmethod
@@ -194,7 +241,7 @@ class InterfazHelperMatriz():
             instancia.entradas_matrices = nuevas_entradas
 
         except ValueError as e:
-            QMessageBox.critical(None, "Error", f"Entrada inválida: {str(e)}")
+            QMessageBox.critical(None, "Error", f"Entrada invalida: {str(e)}")
             return None, None, None
 
     @staticmethod
@@ -203,6 +250,8 @@ class InterfazHelperMatriz():
         resultado_texto = QTextEdit()
         resultado_texto.setReadOnly(True)
         resultado_texto.setFontFamily("Courier New")  # Fuente monoespaciada
+        resultado_texto.setFontPointSize(14)
+        resultado_texto.setFontWeight(1000)
         resultado_texto.setText(texto)
         
         return resultado_texto
@@ -265,8 +314,8 @@ class InterfazHelperMatriz():
             return n
         
         except ValueError as e:
-            QMessageBox.critical(None,"Error", f"Entrada inválida: {str(e)}")
-            raise
+            QMessageBox.critical(None,"Error", f"Entrada invalida: {str(e)}")
+            return None
         
     @staticmethod
     def crear_entrada_vector(dimension, orientacion="vertical"):
