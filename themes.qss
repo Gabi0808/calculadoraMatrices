@@ -1,94 +1,118 @@
 /* Fondo general de la aplicación */
 QWidget {
-    background-color: #f5f5dc; /* Color crema */
-    color: #4b4b4b; /* Color de texto oscuro suave */
+    background-color: #eaf8f9; /* Cian claro */
+    color: #089bac; /* Cian oscuro */
     font-family: Arial, sans-serif;
     font-size: 14px;
 }
 
-/* Estilo para todos los botones */
+/* Botones */
 QPushButton {
-    background-color: rgba(255, 255, 255, 0.6); /* Fondo semitransparente crema */
-    color: #4b4b4b;
-    border: 2px solid #a2d5ab; /* Borde verde pastel */
+    background-color: #089bac; /* Fondo cian oscuro */
+    color: white; /* Texto blanco */
+    border: 2px solid #089bac; /* Borde en cian oscuro */
     border-radius: 8px;
     padding: 10px 15px;
     font-weight: bold;
 }
 
-QPushButton:focus{
-    outline: none;
+QPushButton:hover {
+    background-color: #e7f5f7; /* Fondo cian grisáceo */
+    color: #089bac; /* Texto en cian oscuro */
+    border: 2px solid #089bac; /* Mantén el borde cian oscuro */
+}
 
+QPushButton:pressed {
+    background-color: #056e79; /* Cian oscuro más profundo */
+    border-color: #056e79;
 }
 
 QPushButton:disabled {
-    background-color: rgba(200, 200, 200, 0.6); /* Fondo gris claro semitransparente */
-    color: #a0a0a0; /* Texto gris claro */
-    border-color: #c0c0c0; /* Borde gris claro */
-    border-style: dashed; /* Opcional: hacer el borde más distintivo */
+    background-color: #e7f5f7; /* Fondo cian grisáceo */
+    color: #b3d9db; /* Texto más claro */
+    border-color: #b3d9db;
 }
 
-/* Botón al pasar el cursor */
-QPushButton:hover {
-    background-color: rgba(162, 213, 171, 0.3); /* Fondo verde pastel más claro */
-    border-color: #79b38a; /* Borde verde más oscuro */
-    color: #ffffff; /* Texto blanco */
+QPushButton:focus{
+    outline: none;
 }
 
-/* Botón al hacer clic */
-QPushButton:pressed {
-    background-color: rgba(121, 179, 138, 0.7); /* Fondo verde pastel oscuro */
-    border-color: #579065; /* Borde verde más profundo */
-}
-
-/* Estilo para todos los QLabel */
+/* Textos */
 QLabel {
-    color: #4b4b4b; /* Color de texto oscuro suave */
+    color: #089bac; /* Texto cian oscuro */
     font-size: 14px;
     font-weight: bold;
 }
 
-/* Campos de texto con efecto de borde inferior */
+/* Campos de texto */
 QLineEdit {
-    background-color: #fafaf0; /* Fondo crema más claro */
-    color: #4b4b4b;
-    border: none;
-    border-bottom: 2px solid #a2d5ab; /* Borde inferior verde pastel */
+    background-color: white;
+    color: #089bac;
+    border: 1px solid #e7f5f7; /* Cian grisáceo */
     padding: 8px;
-    font-size: 14px;
+    border-radius: 5px;
 }
 
 QLineEdit:focus {
-    border-bottom: 2px solid #79b38a; /* Cambia a verde más oscuro al enfocarse */
+    border: 2px solid #089bac; /* Cian oscuro al enfocar */
 }
 
-QStackedWidget {
-    border: 1px solid #dbdbaf;
+/* Tabs */
+QTabWidget::pane {
+    background-color: #eaf8f9; /* Fondo cian claro */
+    border: 1px solid #e7f5f7; /* Cian grisáceo */
+}
+
+QTabBar::tab {
+    background-color: #e7f5f7; /* Fondo cian grisáceo */
+    color: #089bac;
+    padding: 10px;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+}
+
+QTabBar::tab:selected {
+    background-color: #089bac; /* Fondo cian oscuro */
+    color: white;
+}
+
+QTabBar::tab:hover {
+    background-color: #cceff1; /* Cian más claro al pasar el cursor */
+}
+
+/* Splitter */
+QSplitter::handle {
+    background-color: #089bac; /* Cian grisáceo */
+    border: 1px solid #e7f5f7; /* Cian oscuro */
+}
+
+QSplitter::handle:hover {
+    background-color: #089bac; /* Cian oscuro al pasar el cursor */
 }
 
 /* Barra de progreso */
 QProgressBar {
-    background-color: #fafaf0;
+    background-color: #e7f5f7; /* Fondo cian grisáceo */
+    color: #089bac;
     border-radius: 10px;
     text-align: center;
-    color: #4b4b4b;
 }
 
 QProgressBar::chunk {
-    background-color: #a2d5ab; /* Verde pastel para la barra de progreso */
+    background-color: #089bac; /* Cian oscuro */
     border-radius: 10px;
 }
 
 /* Sliders */
 QSlider::groove:horizontal {
     height: 6px;
-    background: #fafaf0;
+    background: #e7f5f7; /* Cian grisáceo */
     border-radius: 3px;
 }
 
 QSlider::handle:horizontal {
-    background: #a2d5ab;
-    border: 2px solid #4b4b4b;
+    background: #089bac; /* Cian oscuro */
+    border: 2px solid #056e79; /* Cian oscuro más profundo */
     width: 16px;
     height: 16px;
     border-radius: 8px;
@@ -96,64 +120,24 @@ QSlider::handle:horizontal {
 }
 
 QSlider::handle:horizontal:hover {
-    background: #79b38a; /* Cambia a verde más oscuro al pasar el cursor */
-}
-
-/* Tabs */
-
-QTabWidget::pane {
-    background: #f5f5dc; /* Fondo crema */
-    border: 0px solid #a2d5ab; /* Borde verde pastel */
-}
-
-QTabBar {
-    background: #fafaf0; /* Fondo crema más claro */
-    border: none; /* Elimina bordes no deseados */
-}
-
-QTabBar::tab {
-    background: #fafaf0;
-    color: #4b4b4b;
-    padding: 10px 15px;
-    border-top-left-radius: 8px;
-    border-top-right-radius: 8px;
-    margin-right: 2px;
-}
-
-QTabBar::tab:selected {
-    background: #a2d5ab; /* Fondo verde pastel */
-    color: white;
-}
-
-QTabBar::tab:hover {
-    background: #e8e8d0; /* Fondo crema claro */
-}
-
-/* Cuadro de mensajes y otros diálogos */
-QMessageBox {
-    background-color: #f5f5dc;
-    color: #4b4b4b;
-    border: 2px solid #a2d5ab;
-    border-radius: 10px;
+    background: #056e79; /* Cian oscuro más profundo */
 }
 
 /* Scrollbars */
 QScrollBar:vertical, QScrollBar:horizontal {
-    background-color: #fafaf0;
+    background-color: #e7f5f7; /* Cian grisáceo */
+    border: none;
     width: 10px;
     height: 10px;
-    border: none;
 }
 
 QScrollBar::handle:vertical, QScrollBar::handle:horizontal {
-    background-color: #a2d5ab;
-    min-height: 20px;
-    min-width: 20px;
+    background-color: #089bac; /* Cian oscuro */
     border-radius: 5px;
 }
 
 QScrollBar::handle:vertical:hover, QScrollBar::handle:horizontal:hover {
-    background-color: #79b38a; /* Verde más oscuro */
+    background-color: #056e79; /* Cian oscuro más profundo */
 }
 
 QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical,
@@ -162,25 +146,48 @@ QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
     border: none;
 }
 
-/* Splitter Handle: General */
-QSplitter::handle {
-    background-color: #dbdbaf; /* Verde pastel para destacar */
-    border: 0px solid #4b4b4b; /* Borde oscuro para visibilidad */
+/* Cuadro de mensajes y otros diálogos */
+QMessageBox {
+    background-color: #eaf8f9; /* Fondo cian claro */
+    color: #089bac; /* Texto cian oscuro */
+    border: 2px solid #089bac;
+    border-radius: 10px;
 }
 
-/* Splitter Handle al pasar el cursor */
-QSplitter::handle:hover {
-    background-color: #79b38a; /* Verde más oscuro al pasar el cursor */
+/* Estilo para Stacked Widgets */
+QStackedWidget {
+    border: 1px solid #e7f5f7; /* Borde cian grisáceo */
 }
 
-/* Splitter Handle Vertical */
-QSplitter::handle:vertical {
-    height: 2px; /* Grosor de la barra */
-    margin: 2px 0; /* Margen para separarlo del contenido */
-}
 
-/* Splitter Handle Horizontal */
-QSplitter::handle:horizontal {
-    width: 2px; /* Grosor de la barra */
-    margin: 0 2px; /* Margen para separarlo del contenido */
-}
+ QComboBox {
+                background-color: #e7f5f7; /* Fondo cian grisáceo */
+                color: #089bac; /* Texto cian oscuro */
+                border: 1px solid #089bac; /* Borde cian oscuro */
+                border-radius: 5px;
+                padding: 5px 10px; /* Espaciado interno */
+                font-size: 14px;
+            }
+
+            QComboBox:hover {
+                background-color: #cceff1; /* Fondo más claro al pasar el cursor */
+            }
+
+            QComboBox::drop-down {
+                border-left: 1px solid #089bac; /* Borde entre el cuadro y la flecha */
+                width: 30px; /* Ancho de la flecha desplegable */
+                background: #e7f5f7; /* Fondo de la flecha */
+            }
+
+            QComboBox::down-arrow {
+                image: url(down-arrow.png); /* Ruta al icono de flecha */
+                width: 10px;
+                height: 10px;
+            }
+
+            QComboBox QAbstractItemView {
+                background-color: #ffffff; /* Fondo de la lista */
+                border: 1px solid #089bac; /* Borde de la lista */
+                selection-background-color: #cceff1; /* Fondo de selección */
+                selection-color: #089bac; /* Texto seleccionado */
+            }

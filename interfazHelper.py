@@ -64,7 +64,7 @@ class CustomLineEdit(QLineEdit):
         else:
             super().keyPressEvent(event)
 
-class InterfazHelperMatriz():
+class InterfazHelperMatriz:
 
     @staticmethod    
     def crear_layout_ingresar_dimensiones(labels_inputs, boton_texto, boton_callback):
@@ -263,175 +263,6 @@ class InterfazHelperMatriz():
             main_layout.removeWidget(resultado_texto)
     
     @staticmethod
-    def crear_layout_vectores(n_input, ingresar_dimension_callback):
-        contenedor_layout = QVBoxLayout()
-        contenedor_botones_layout = QVBoxLayout()
-        contenedor_vectores_layout = QHBoxLayout()
-        
-        dimension_layout = InterfazHelperMatriz.crear_layout_ingresar_dimensiones(
-            labels_inputs=[("Dimensión de los vectores:", n_input)],
-            boton_texto="Ingresar dimensión",
-            boton_callback=ingresar_dimension_callback 
-        )
-
-        contenedor_vectores_layout.addLayout(dimension_layout)
-        contenedor_layout.addLayout(contenedor_vectores_layout)
-        contenedor_layout.addLayout(contenedor_botones_layout)
-
-        return contenedor_layout, contenedor_vectores_layout, contenedor_botones_layout
-
-    @staticmethod
-    def limpiar_botones_vectores(contenedor_layout):
-        while contenedor_layout.count():
-            item = contenedor_layout.takeAt(0)
-            widget = item.widget()
-            if widget is not None:
-                widget.deleteLater()
-
-    @staticmethod
-    def crear_botones_vectores(agregar_vector_callback, eliminar_vector_callback, ejecutar_operacion_callback, contenedor_layout):
-        
-        InterfazHelperMatriz.limpiar_botones_vectores(contenedor_layout)
-
-        agregar_btn = QPushButton("Agregar Vector")
-        agregar_btn.clicked.connect(agregar_vector_callback)
-        contenedor_layout.addWidget(agregar_btn)
-        
-        eliminar_btn = QPushButton("Eliminar Último Vector")
-        eliminar_btn.clicked.connect(eliminar_vector_callback)
-        contenedor_layout.addWidget(eliminar_btn)
-        
-        ejecutar_btn = QPushButton("Calcular")
-        ejecutar_btn.clicked.connect(ejecutar_operacion_callback)
-        contenedor_layout.addWidget(ejecutar_btn)
-        
-    @staticmethod
-    def leer_entrada_dimension_vector(n_input):
-        try:
-            n = int(n_input.text())
-            if n <= 0:
-                raise ValueError("El número de filas debe ser un número entero positivo.")
-            
-            return n
-        
-        except ValueError as e:
-            QMessageBox.critical(None,"Error", f"Entrada invalida: {str(e)}")
-            return None
-        
-    @staticmethod
-    def crear_entrada_vector(dimension, orientacion="vertical"):
-        contenedor_vectores_inputs = QVBoxLayout()
-
-        # Layout para el escalar
-        escalar_input_layout = QHBoxLayout()
-        label = QLabel("Escalar del vector:")
-        escalar_line_edit = QLineEdit()
-        escalar_input_layout.addWidget(label)
-        escalar_input_layout.addWidget(escalar_line_edit)
-        entrada_escalar = [(label, escalar_line_edit)]
-
-        # Layout para los componentes del vector
-        grid_layout = QGridLayout()
-        entradas_vector = []
-
-        for i in range(dimension):
-            etiqueta = QLabel(f"Componente {i + 1}:")
-            entrada = QLineEdit()
-            entrada.setPlaceholderText(f"Valor {i + 1}")
-
-            if orientacion == "vertical":
-                # Colocar la etiqueta y el campo de entrada en filas separadas
-                grid_layout.addWidget(etiqueta, i, 0)
-                grid_layout.addWidget(entrada, i, 1)
-            elif orientacion == "horizontal":
-                # Colocar la etiqueta arriba del campo de entrada
-                v_layout = QVBoxLayout()
-                v_layout.addWidget(etiqueta)
-                v_layout.addWidget(entrada)
-                grid_layout.addLayout(v_layout, 0, i)  # Añadir el VBoxLayout en una sola fila
-            else:
-                raise ValueError("La orientación debe ser 'vertical' u 'horizontal'")
-
-            entradas_vector.append((etiqueta, entrada))
-
-        contenedor_vectores_inputs.addLayout(escalar_input_layout)
-        contenedor_vectores_inputs.addLayout(grid_layout)
-        
-        return entrada_escalar, entradas_vector, contenedor_vectores_inputs
-
-    
-    @staticmethod
-    def agregar_campo_vector(vector_inputs, escalar_inputs, layout, n, orientacion="vertical"):
-        
-        entrada_escalar, entrada_vector, contenedor_entradas_vector = InterfazHelperMatriz.crear_entrada_vector(n, orientacion)
-        
-        layout.addLayout(contenedor_entradas_vector)
-        
-        vector_inputs.append(entrada_vector)
-        escalar_inputs.append(entrada_escalar)
-    
-    @staticmethod    
-    def eliminar_vector(vector_inputs, entrada_escalar, inputs_layout):
-        if vector_inputs:
-            
-            entradas_vector = vector_inputs.pop()
-            entrada_escalar = entrada_escalar.pop()
-
-            for etiqueta, entrada in entrada_escalar:
-                etiqueta.deleteLater()
-                entrada.deleteLater()
-            
-            for etiqueta, entrada in entradas_vector:
-                etiqueta.deleteLater()
-                entrada.deleteLater()
-
-            item_layout = inputs_layout.takeAt(inputs_layout.count() - 1)
-            if isinstance(item_layout, QLayout):
-                while item_layout.count():
-                    item = item_layout.takeAt(0)
-                    if item.widget():
-                        item.widget().deleteLater()
-                item_layout.deleteLater()
-            elif item_layout:
-                widget = item_layout.widget()
-                if widget:
-                    widget.deleteLater()
-            inputs_layout.removeItem(item_layout)
-
-    @staticmethod
-    def limpiar_entradas_vectores(vector_inputs, escalar_inputs, inputs_layout):
-        while vector_inputs:
-            InterfazHelperMatriz.eliminar_vector(vector_inputs, escalar_inputs, inputs_layout) 
-
-    @staticmethod
-    def procesar_entrada(entradas_vector, entradas_escalar, orientacion="vertical"):
-        vectores = []
-        escalares = []
-
-        for idx, vector_input in enumerate(entradas_vector):
-            valores_vector = []
-            for _, entrada in vector_input:
-                vector_text = entrada.text()
-                if vector_text.strip() == "":
-                    raise ValueError(f"El vector {idx + 1} tiene componentes vacíos.")
-                valores_vector.append(float(vector_text))
-            vectores.append(Vector(len(valores_vector), valores_vector, orientacion))
-
-        for idx, escalar_input in enumerate(entradas_escalar):
-            escalar_text = escalar_input.text()
-            if escalar_text.strip() == "":
-                raise ValueError(f"El escalar para el vector {idx + 1} está vacío.")
-            escalares.append(float(escalar_text))
-
-        if len(vectores) != len(escalares):
-            raise ValueError("El número de vectores y escalares no coincide.")
-
-        for i, vector in enumerate(vectores):
-            vectores[i] = vector.escalar_vector(escalares[i])
-
-        return vectores
-    
-    @staticmethod
     def configurar_matriz_y_vector(instancia, main_layout, resultado_texto, grid_layout, n_input, calcular_callback, nombre_boton, target_layout):
         try:
             
@@ -486,40 +317,6 @@ class InterfazHelperMatriz():
         except ValueError as e:
             QMessageBox.critical(None, "Error", str(e))
 
-    @staticmethod
-    def ingresar_vectores(dimension_input, vector_inputs, escalar_inputs, contenedor_vectores_layout, contenedor_botones_layout, ejecutar_callback, orientaciones=["vertical", "vertical"]):
-  
-        n = InterfazHelperMatriz.leer_entrada_dimension_vector(dimension_input)
-
-        if n is None:
-            return
-
-        InterfazHelperMatriz.crear_botones_vectores(
-            lambda: InterfazHelperMatriz.agregar_campo_vector(vector_inputs, escalar_inputs, contenedor_vectores_layout, n, orientaciones[len(vector_inputs) % len(orientaciones)]),
-            lambda: InterfazHelperMatriz.eliminar_vector(vector_inputs, escalar_inputs, contenedor_vectores_layout),
-            ejecutar_callback,
-            contenedor_botones_layout
-        )
-
-        InterfazHelperMatriz.limpiar_entradas_vectores(vector_inputs, escalar_inputs, contenedor_vectores_layout)
-
-        for orientacion in orientaciones:
-            InterfazHelperMatriz.agregar_campo_vector(vector_inputs, escalar_inputs, contenedor_vectores_layout, n, orientacion)
-
-    @staticmethod
-    def leer_entrada_vectores_escalares(vector_inputs, escalar_inputs):
-        try:
-
-            valores_vector = [elemento for elemento in vector_inputs]
-            valores_escalar = [entrada[0][1] for entrada in escalar_inputs]
-
-            lista_vectores_escalados = InterfazHelperMatriz.procesar_entrada(valores_vector, valores_escalar)
-
-            return lista_vectores_escalados
-
-        except ValueError as e:
-            QMessageBox.critical(None, "Error al procesar entradas", str(e))
-            return []
 
 class InterfazHelperAnalisisNumerico:
     @staticmethod
@@ -547,6 +344,8 @@ class InterfazHelperAnalisisNumerico:
         text_edit = QTextEdit()
         text_edit.setReadOnly(solo_lectura)
         text_edit.setFontFamily(fuente)
+        text_edit.setFontPointSize(14)
+        text_edit.setFontWeight(1000)
         return text_edit
 
     @staticmethod
@@ -652,3 +451,199 @@ class InterfazHelperAnalisisNumerico:
         contenedor_funcion.addLayout(simbolos_layout)
 
         return contenedor_funcion, input_funcion, latex_label
+
+class InterfazHelperVector:
+    @staticmethod
+    def crear_layout_vectores(n_input, ingresar_dimension_callback):
+        contenedor_layout = QVBoxLayout()
+        contenedor_botones_layout = QVBoxLayout()
+        contenedor_vectores_layout = QHBoxLayout()
+
+        dimension_layout = InterfazHelperMatriz.crear_layout_ingresar_dimensiones(
+            labels_inputs=[("Dimensión de los vectores:", n_input)],
+            boton_texto="Ingresar dimensión",
+            boton_callback=ingresar_dimension_callback 
+        )
+
+        contenedor_vectores_layout.addLayout(dimension_layout)
+        contenedor_layout.addLayout(contenedor_vectores_layout)
+        contenedor_layout.addLayout(contenedor_botones_layout)
+
+        return contenedor_layout, contenedor_vectores_layout, contenedor_botones_layout
+
+    @staticmethod
+    def limpiar_botones_vectores(contenedor_layout):
+        while contenedor_layout.count():
+            item = contenedor_layout.takeAt(0)
+            widget = item.widget()
+            if widget is not None:
+                widget.deleteLater()
+
+    @staticmethod
+    def crear_botones_vectores(agregar_vector_callback, eliminar_vector_callback, ejecutar_operacion_callback, contenedor_layout):
+        InterfazHelperVector.limpiar_botones_vectores(contenedor_layout)
+
+        agregar_btn = QPushButton("Agregar Vector")
+        agregar_btn.clicked.connect(agregar_vector_callback)
+        contenedor_layout.addWidget(agregar_btn)
+
+        eliminar_btn = QPushButton("Eliminar Último Vector")
+        eliminar_btn.clicked.connect(eliminar_vector_callback)
+        contenedor_layout.addWidget(eliminar_btn)
+
+        ejecutar_btn = QPushButton("Calcular")
+        ejecutar_btn.clicked.connect(ejecutar_operacion_callback)
+        contenedor_layout.addWidget(ejecutar_btn)
+
+    @staticmethod
+    def leer_entrada_dimension_vector(n_input):
+        try:
+            n = int(n_input.text())
+            if n <= 0:
+                raise ValueError("El número de filas debe ser un número entero positivo.")
+
+            return n
+
+        except ValueError as e:
+            QMessageBox.critical(None, "Error", f"Entrada invalida: {str(e)}")
+            return None
+
+    @staticmethod
+    def crear_entrada_vector(dimension, orientacion="vertical"):
+        contenedor_vectores_inputs = QVBoxLayout()
+
+        # Layout para el escalar
+        escalar_input_layout = QHBoxLayout()
+        label = QLabel("Escalar del vector:")
+        escalar_line_edit = QLineEdit()
+        escalar_input_layout.addWidget(label)
+        escalar_input_layout.addWidget(escalar_line_edit)
+        entrada_escalar = [(label, escalar_line_edit)]
+
+        # Layout para los componentes del vector
+        grid_layout = QGridLayout()
+        entradas_vector = []
+
+        for i in range(dimension):
+            etiqueta = QLabel(f"Componente {i + 1}:")
+            entrada = QLineEdit()
+            entrada.setPlaceholderText(f"Valor {i + 1}")
+
+            if orientacion == "vertical":
+                grid_layout.addWidget(etiqueta, i, 0)
+                grid_layout.addWidget(entrada, i, 1)
+            elif orientacion == "horizontal":
+                v_layout = QVBoxLayout()
+                v_layout.addWidget(etiqueta)
+                v_layout.addWidget(entrada)
+                grid_layout.addLayout(v_layout, 0, i)
+            else:
+                raise ValueError("La orientación debe ser 'vertical' u 'horizontal'")
+
+            entradas_vector.append((etiqueta, entrada))
+
+        contenedor_vectores_inputs.addLayout(escalar_input_layout)
+        contenedor_vectores_inputs.addLayout(grid_layout)
+
+        return entrada_escalar, entradas_vector, contenedor_vectores_inputs
+
+    @staticmethod
+    def agregar_campo_vector(vector_inputs, escalar_inputs, layout, n, orientacion="vertical"):
+        entrada_escalar, entrada_vector, contenedor_entradas_vector = InterfazHelperVector.crear_entrada_vector(n, orientacion)
+        layout.addLayout(contenedor_entradas_vector)
+        vector_inputs.append(entrada_vector)
+        escalar_inputs.append(entrada_escalar)
+
+    @staticmethod
+    def eliminar_vector(vector_inputs, entrada_escalar, inputs_layout):
+        if vector_inputs:
+            entradas_vector = vector_inputs.pop()
+            entrada_escalar = entrada_escalar.pop()
+
+            for etiqueta, entrada in entrada_escalar:
+                etiqueta.deleteLater()
+                entrada.deleteLater()
+
+            for etiqueta, entrada in entradas_vector:
+                etiqueta.deleteLater()
+                entrada.deleteLater()
+
+            item_layout = inputs_layout.takeAt(inputs_layout.count() - 1)
+            if isinstance(item_layout, QLayout):
+                while item_layout.count():
+                    item = item_layout.takeAt(0)
+                    if item.widget():
+                        item.widget().deleteLater()
+                item_layout.deleteLater()
+            elif item_layout:
+                widget = item_layout.widget()
+                if widget:
+                    widget.deleteLater()
+            inputs_layout.removeItem(item_layout)
+
+    @staticmethod
+    def limpiar_entradas_vectores(vector_inputs, escalar_inputs, inputs_layout):
+        while vector_inputs:
+            InterfazHelperVector.eliminar_vector(vector_inputs, escalar_inputs, inputs_layout)
+
+    @staticmethod
+    def procesar_entrada(entradas_vector, entradas_escalar, orientacion="vertical"):
+        vectores = []
+        escalares = []
+
+        for idx, vector_input in enumerate(entradas_vector):
+            valores_vector = []
+            for _, entrada in vector_input:
+                vector_text = entrada.text()
+                if vector_text.strip() == "":
+                    raise ValueError(f"El vector {idx + 1} tiene componentes vacíos.")
+                valores_vector.append(float(vector_text))
+            vectores.append(Vector(len(valores_vector), valores_vector, orientacion))
+
+        for idx, escalar_input in enumerate(entradas_escalar):
+            escalar_text = escalar_input.text()
+            if escalar_text.strip() == "":
+                raise ValueError(f"El escalar para el vector {idx + 1} está vacío.")
+            escalares.append(float(escalar_text))
+
+        if len(vectores) != len(escalares):
+            raise ValueError("El número de vectores y escalares no coincide.")
+
+        for i, vector in enumerate(vectores):
+            vectores[i] = vector.escalar_vector(escalares[i])
+
+        return vectores
+
+    @staticmethod
+    def ingresar_vectores(dimension_input, vector_inputs, escalar_inputs, contenedor_vectores_layout, contenedor_botones_layout, ejecutar_callback, orientaciones=["vertical", "vertical"]):
+        n = InterfazHelperVector.leer_entrada_dimension_vector(dimension_input)
+
+        if n is None:
+            return
+
+        InterfazHelperVector.crear_botones_vectores(
+            lambda: InterfazHelperVector.agregar_campo_vector(vector_inputs, escalar_inputs, contenedor_vectores_layout, n, orientaciones[len(vector_inputs) % len(orientaciones)]),
+            lambda: InterfazHelperVector.eliminar_vector(vector_inputs, escalar_inputs, contenedor_vectores_layout),
+            ejecutar_callback,
+            contenedor_botones_layout
+        )
+
+        InterfazHelperVector.limpiar_entradas_vectores(vector_inputs, escalar_inputs, contenedor_vectores_layout)
+
+        for orientacion in orientaciones:
+            InterfazHelperVector.agregar_campo_vector(vector_inputs, escalar_inputs, contenedor_vectores_layout, n, orientacion)
+
+    @staticmethod
+    def leer_entrada_vectores_escalares(vector_inputs, escalar_inputs):
+        try:
+            valores_vector = [elemento for elemento in vector_inputs]
+            valores_escalar = [entrada[0][1] for entrada in escalar_inputs]
+
+            lista_vectores_escalados = InterfazHelperVector.procesar_entrada(valores_vector, valores_escalar)
+
+            return lista_vectores_escalados
+
+        except ValueError as e:
+            QMessageBox.critical(None, "Error al procesar entradas", str(e))
+            return []
+
