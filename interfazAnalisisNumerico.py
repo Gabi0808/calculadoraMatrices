@@ -55,7 +55,7 @@ class BiseccionTab(QWidget):
         self.initial_ylim = (-5, 5)
 
         self.timer = QTimer()
-        self.timer.setInterval(200)
+        self.timer.setInterval(400)
         self.timer.timeout.connect(self.actualizar_latex_async)
         self.render_thread = None
 
@@ -130,8 +130,13 @@ class BiseccionTab(QWidget):
         num_points = 1000
         x_vals = [x_min + i * (x_max - x_min) / (num_points - 1) for i in range(num_points)]
         
-        # Evaluar la función en cada x
-        y_vals = [self.funcion.evaluar_funcion(x) for x in x_vals]
+        y_vals = []
+        for x in x_vals:
+            try:
+                y_vals.append(self.funcion.evaluar_funcion(x))
+            except Exception:
+                # Si ocurre un error, simplemente detén la evaluación
+                break
 
         # Graficar la función
         self.canvas.ax.plot(x_vals, y_vals, label="f(x)", color='blue')
@@ -159,6 +164,7 @@ class BiseccionTab(QWidget):
         f_b = self.funcion.evaluar_funcion(b)
         f_c = self.funcion.evaluar_funcion(c)
 
+
         if f_a is not None:
             self.puntos_iteracion.append(self.canvas.ax.plot(a, f_a, 'ro', label='a')[0])
         if f_b is not None:
@@ -166,6 +172,8 @@ class BiseccionTab(QWidget):
         if f_c is not None:
             self.puntos_iteracion.append(self.canvas.ax.plot(c, f_c, 'go', label='c')[0])
 
+        self.puntos_iteracion.append(self.canvas.ax.plot([], [], ' ', label=f'Iteración actual: {self.iteracion_actual}')[0])
+        
         self.canvas.ax.legend()
         self.canvas.draw()
 
@@ -219,7 +227,7 @@ class NewtonRaphsonTab(QWidget):
         self.initial_ylim = (-5, 5)
 
         self.timer = QTimer()
-        self.timer.setInterval(200)
+        self.timer.setInterval(400)
         self.timer.timeout.connect(self.actualizar_latex_async)
         self.render_thread = None
 
@@ -287,7 +295,13 @@ class NewtonRaphsonTab(QWidget):
         num_points = 1000
         x_vals = [x_min + i * (x_max - x_min) / (num_points - 1) for i in range(num_points)]
         
-        y_vals = [self.funcion.evaluar_funcion(x) for x in x_vals]
+        y_vals = []
+        for x in x_vals:
+            try:
+                y_vals.append(self.funcion.evaluar_funcion(x))
+            except Exception:
+                # Si ocurre un error, simplemente detén la evaluación
+                break
 
         self.canvas.ax.plot(x_vals, y_vals, label="f(x)", color='blue')
 
@@ -371,7 +385,7 @@ class FalsaPosicionTab(QWidget):
         self.initial_ylim = (-5, 5)
 
         self.timer = QTimer()
-        self.timer.setInterval(200)
+        self.timer.setInterval(400)
         self.timer.timeout.connect(self.actualizar_latex_async)
         self.render_thread = None
 
@@ -438,8 +452,13 @@ class FalsaPosicionTab(QWidget):
         num_points = 1000
         x_vals = [x_min + i * (x_max - x_min) / (num_points - 1) for i in range(num_points)]
         
-        # Evaluar la función en cada x
-        y_vals = [self.funcion.evaluar_funcion(x) for x in x_vals]
+        y_vals = []
+        for x in x_vals:
+            try:
+                y_vals.append(self.funcion.evaluar_funcion(x))
+            except Exception:
+                # Si ocurre un error, simplemente detén la evaluación
+                break
 
         # Graficar la función
         self.canvas.ax.plot(x_vals, y_vals, label="f(x)", color='blue')
@@ -541,7 +560,7 @@ class SecanteTab(QWidget):
         self.initial_ylim = (-5, 5)
 
         self.timer = QTimer()
-        self.timer.setInterval(200)
+        self.timer.setInterval(400)
         self.timer.timeout.connect(self.actualizar_latex_async)
         self.render_thread = None
 
@@ -601,10 +620,43 @@ class SecanteTab(QWidget):
             QMessageBox.information(self, "Fin", "Todas las iteraciones han terminado.")
             self.boton_siguiente.setEnabled(False)
 
+    def graficar_funcion_async(self):
+
+        for line in self.canvas.ax.get_lines():
+            line.remove()
+
+        x_min, x_max = self.xlim
+        num_points = 1000
+        x_vals = [x_min + i * (x_max - x_min) / (num_points - 1) for i in range(num_points)]
+        
+        y_vals = []
+        for x in x_vals:
+            try:
+                y_vals.append(self.funcion.evaluar_funcion(x))
+            except Exception:
+                # Si ocurre un error, simplemente detén la evaluación
+                break
+
+        # Graficar la función
+        self.canvas.ax.plot(x_vals, y_vals, label="f(x)", color='blue')
+        self.canvas.ax.axhline(0, color='black', linewidth=0.7)
+        self.canvas.ax.axvline(0, color='black', linewidth=0.7)
+        self.canvas.ax.set_xlim(self.xlim)
+        self.canvas.ax.set_ylim(self.ylim)
+        self.canvas.ax.set_xlim(self.initial_xlim)
+        self.canvas.ax.set_ylim(self.initial_ylim)
+        self.canvas.ax.set_aspect('equal', adjustable='box')
+        self.canvas.ax.legend()
+        self.canvas.draw()
+
     def actualizar_grafico(self, x_prev, x_curr):
         if not hasattr(self, 'grafico_fijo'):
             self.graficar_funcion_async()
             self.grafico_fijo = True
+
+        if hasattr(self, 'linea_secante') and self.linea_secante:
+            self.linea_secante.remove()
+            self.linea_secante = None
 
         # Limpiar puntos de la iteración anterior
         [p.remove() for p in getattr(self, 'puntos_iteracion', []) if p]
@@ -619,9 +671,9 @@ class SecanteTab(QWidget):
         if f_x_curr is not None:
             self.puntos_iteracion.append(self.canvas.ax.plot(x_curr, f_x_curr, 'go', label='x_curr')[0])
 
-        # Graficar la línea secante
         if f_x_prev is not None and f_x_curr is not None:
-            self.canvas.ax.plot([x_prev, x_curr], [f_x_prev, f_x_curr], 'k--', label='Secante')
-
+            self.linea_secante = self.canvas.ax.plot(
+                [x_prev, x_curr], [f_x_prev, f_x_curr], 'k--', label='Secante'
+            )[0] 
         self.canvas.ax.legend()
         self.canvas.draw()

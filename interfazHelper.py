@@ -70,6 +70,7 @@ class InterfazHelperMatriz():
     def crear_layout_ingresar_dimensiones(labels_inputs, boton_texto, boton_callback):
         top_layout = QVBoxLayout()
         inputs_layout = QHBoxLayout()
+        inputs_layout.setAlignment(Qt.AlignLeft)
         for label_text, input_widget in labels_inputs:
             label = QLabel(label_text)
             inputs_layout.addWidget(label)
@@ -591,12 +592,24 @@ class InterfazHelperAnalisisNumerico:
             "/": "/",        # Fracción
             "π": "pi",       # Pi
             "e": "E"         # Número de Euler
+                        
         }
         
+        columnas = 4
+        fila = 0
+        columna = 0
+
         for simbolo, expresion in simbolos.items():
+
             boton = QPushButton(simbolo)
             boton.clicked.connect(lambda _, exp=expresion: InterfazHelperAnalisisNumerico.insertar_simbolo(input_funcion, exp))
-            layout.addWidget(boton)
+            
+            layout.addWidget(boton, fila, columna)
+            
+            columna += 1
+            if columna >= columnas: 
+                columna = 0
+                fila += 1
 
     @staticmethod
     def insertar_simbolo(input_funcion, simbolo):
@@ -630,7 +643,7 @@ class InterfazHelperAnalisisNumerico:
         label_funcion = InterfazHelperAnalisisNumerico.crear_label(texto)
         input_funcion = InterfazHelperAnalisisNumerico.crear_input("", callback_actualizar_latex)
 
-        simbolos_layout = QHBoxLayout()
+        simbolos_layout = QGridLayout()
         InterfazHelperAnalisisNumerico.agregar_botones_simbolos(simbolos_layout, input_funcion)
         
         contenedor_funcion.addWidget(latex_label)

@@ -65,7 +65,9 @@ class MatricesScreen(QWidget):
         else:
             nueva_pestaña = tab_clase()
         
-        self.tab_widget.addTab(nueva_pestaña, titulo)
+        nueva_index = self.tab_widget.addTab(nueva_pestaña, titulo)
+    
+        self.tab_widget.setCurrentIndex(nueva_index)
 
     def cerrar_pestana(self, index):
         self.tab_widget.removeTab(index)
@@ -99,7 +101,8 @@ class AnalisisNumericoScreen(QWidget):
 
     def agregar_pestana(self, tab_clase, titulo):
         nueva_pestaña = tab_clase()
-        self.tab_widget.addTab(nueva_pestaña, titulo)
+        nueva_index = self.tab_widget.addTab(nueva_pestaña, titulo)
+        self.tab_widget.setCurrentIndex(nueva_index)
 
     def cerrar_pestana(self, index):
         self.tab_widget.removeTab(index)

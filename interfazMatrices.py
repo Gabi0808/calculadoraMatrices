@@ -12,79 +12,106 @@ from interfazHelper import InterfazHelperMatriz
 from visualizador import *
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 
+from PyQt5.QtWidgets import (
+    QWidget, QSplitter, QVBoxLayout, QHBoxLayout, QLabel,
+    QLineEdit, QPushButton, QTextEdit, QGridLayout, QMessageBox
+)
+from PyQt5.QtCore import Qt
+
 class IngresarMatrizDialog(QWidget):
     def __init__(self, rectangular=False):
         super().__init__()
         self.rectangular = rectangular
-        self.setGeometry(100, 100, 400, 300)
+        self.setGeometry(100, 100, 800, 600)  # Ancho más grande para acomodar el splitter
         self.setWindowTitle("Ingresar Matriz")
-        
-        self.main_layout = QVBoxLayout(self)
-        self.main_layout.setContentsMargins(20, 20, 20, 20)
-        self.main_layout.setSpacing(10)
-        self.main_layout.setAlignment(Qt.AlignTop)
-        
+
+        # Splitter para dividir entradas y resultados
+        self.splitter = QSplitter(Qt.Horizontal, self)
+        self.splitter.setContentsMargins(0, 0, 0, 0)
+
+        # Layout izquierdo (entradas)
+        self.input_widget = QWidget()
+        self.input_layout = QVBoxLayout(self.input_widget)
+        self.input_layout.setContentsMargins(20, 20, 20, 20)
+        self.input_layout.setSpacing(10)
+        self.input_layout.setAlignment(Qt.AlignTop)
+
         self.entradas = []
-        self.grid_layout=None
-        self.resultado_texto = None
-        self.placeholder_respuestas = None
-        self.matriz:Matriz = None
-        
+        self.grid_layout = None
+        self.matriz = None
+
         self.n_input = QLineEdit()
+        self.n_input.setPlaceholderText("Número de filas")
+
         self.m_input = QLineEdit()
-         
+        self.m_input.setPlaceholderText("Número de columnas")
+
+        # Layout de dimensiones de la matriz
         if self.rectangular:
-            
             layout_dimensiones_matriz = InterfazHelperMatriz.crear_layout_ingresar_dimensiones(
-            labels_inputs=[("Filas de la matriz:", self.n_input), ("Columnas de la matriz: ", self.m_input)],
-            boton_texto="Ingresar Matriz",
-            boton_callback=lambda: InterfazHelperMatriz.ingresar_matriz(instancia=self,
-                                                                  main_layout=self.main_layout,
-                                                                  resultado_texto=self.resultado_texto,
-                                                                  grid_layout=self.grid_layout, 
-                                                                  n_input=self.n_input, 
-                                                                  m_input=self.m_input,
-                                                                  calcular_callback=self.resolver_gauss, 
-                                                                  nombre_boton="Resolver Matriz por Gauss-Jordan",
-                                                                  target_layout=self.main_layout,
-                                                                  rectangular=True
-                                                                )
-         
+                labels_inputs=[("Filas de la matriz:", self.n_input), ("Columnas de la matriz:", self.m_input)],
+                boton_texto="Ingresar Matriz",
+                boton_callback=lambda: InterfazHelperMatriz.ingresar_matriz(
+                    instancia=self,
+                    main_layout=self.input_layout,
+                    resultado_texto=self.resultado_texto,
+                    grid_layout=self.grid_layout,
+                    n_input=self.n_input,
+                    m_input=self.m_input,
+                    calcular_callback=self.resolver_gauss,
+                    nombre_boton="Resolver Matriz por Gauss-Jordan",
+                    target_layout=self.input_layout,
+                    rectangular=True
                 )
+            )
         else:
             layout_dimensiones_matriz = InterfazHelperMatriz.crear_layout_ingresar_dimensiones(
-            labels_inputs=[("Dimensiones de la matriz:", self.n_input)],
-            boton_texto="Ingresar Matriz",
-            boton_callback=lambda: InterfazHelperMatriz.ingresar_matriz(instancia=self,
-                                                                  main_layout=self.main_layout,
-                                                                  resultado_texto=self.resultado_texto,
-                                                                  grid_layout=self.grid_layout, 
-                                                                  n_input=self.n_input, 
-                                                                  m_input=self.m_input,
-                                                                  calcular_callback=self.resolver_gauss, 
-                                                                  nombre_boton="Resolver Matriz por Gauss-Jordan",
-                                                                  target_layout=self.main_layout,
-                                                                  rectangular=False
-                                                                )
-         )
+                labels_inputs=[("Dimensiones de la matriz:", self.n_input)],
+                boton_texto="Ingresar Matriz",
+                boton_callback=lambda: InterfazHelperMatriz.ingresar_matriz(
+                    instancia=self,
+                    main_layout=self.input_layout,
+                    resultado_texto=self.resultado_texto,
+                    grid_layout=self.grid_layout,
+                    n_input=self.n_input,
+                    m_input=None,
+                    calcular_callback=self.resolver_gauss,
+                    nombre_boton="Resolver Matriz por Gauss-Jordan",
+                    target_layout=self.input_layout,
+                    rectangular=False
+                )
+            )
 
+        self.input_layout.addLayout(layout_dimensiones_matriz)
 
-        self.main_layout.addLayout(layout_dimensiones_matriz)
-         
+        # Widget de resultados (derecho)
+        self.result_widget = QWidget()
+        self.result_layout = QVBoxLayout(self.result_widget)
+        self.result_layout.setContentsMargins(20, 20, 20, 20)
+
+        self.resultado_texto = None
+        
+
+        # Agregar widgets al splitter
+        self.splitter.addWidget(self.input_widget)
+        self.splitter.addWidget(self.result_widget)
+        self.splitter.setSizes([350, 400])  # Tamaño inicial de las divisiones
+
+        # Layout principal
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(0,0,0,0)
+        main_layout.addWidget(self.splitter)
+
     def resolver_gauss(self):
         try:
-            
             self.matriz.matriz = InterfazHelperMatriz.procesar_entradas_matrices(self.entradas)
-            
             resultado, pasos = self.matriz.eliminacion_gauss_jordan()
-            
-            InterfazHelperMatriz.limpiar_resultados_texto(self.resultado_texto, self.main_layout)
-            
+
             self.resultado_texto= InterfazHelperMatriz.mostrar_resultados(
                 f"Soluciones:\n{self.matriz.calcular_soluciones_general()}\n\nResultado:\n{self.matriz.mostrar()}\n\nPasos:\n{pasos}"
             )
             
-            self.main_layout.addWidget(self.resultado_texto)
+            self.result_layout.addWidget(self.resultado_texto)
             
         except ValueError as e:
             QMessageBox.critical(self, "Error", f"Error al ingresar datos: {str(e)}")
@@ -238,7 +265,7 @@ class TransformacionMatrizVisualizadorWidget(QWidget):
 
         # Visualización inicial con t = 0 (sin transformación)
         self.actualizar_transformacion()
-        self.exec_()
+        #self.exec_()
 
     def actualizar_transformacion(self):
         t = self.slider.value() / 100.0
@@ -355,9 +382,16 @@ class MultiplicacionMatrizVectorDialog(QWidget):
         self.main_layout.setContentsMargins(20, 20, 20, 20)
         self.main_layout.setSpacing(10)
 
+        # Splitter para dividir entradas y resultados
+        self.splitter = QSplitter(Qt.Horizontal, self)
+        self.splitter.setContentsMargins(0, 0, 0, 0)
+
+        self.contenedor_entradas_widgets = QWidget()
+        self.contenedor_entradas = QVBoxLayout(self.contenedor_entradas_widgets)
+
         #Nivel 1
         self.contenedor_inputs = QHBoxLayout()
-        self.main_layout.addLayout(self.contenedor_inputs)
+        self.contenedor_entradas.addLayout(self.contenedor_inputs)
         self.resultado_texto = None
         
         #Nivel 2
@@ -410,13 +444,20 @@ class MultiplicacionMatrizVectorDialog(QWidget):
         self.escalar_inputs = []
         self.opciones_calc_combo_box = QComboBox()
         self.opciones_calc_combo_box.addItems(["","Calcular multiplicacion", "Visualizar transformacion"])
+        self.visualizador_widgets = QWidget()
+        self.visualizador_layout = QVBoxLayout(self.visualizador_widgets)
 
         # Añadir el botón de calcular al final del main_layout
         calcular_btn = QPushButton("Calcular")
         calcular_btn.clicked.connect(self.calc_respuesta)
         self.calc_botones_layout.addWidget(calcular_btn)
         self.calc_botones_layout.addWidget(self.opciones_calc_combo_box)
-        self.main_layout.addLayout(self.calc_botones_layout)
+        self.contenedor_entradas.addLayout(self.calc_botones_layout)
+
+        self.splitter.addWidget(self.contenedor_entradas_widgets)
+        self.splitter.addWidget(self.visualizador_widgets)
+        self.splitter.setSizes([350, 100])
+        self.main_layout.addWidget(self.splitter)
 
     def ingresar_vectores(self):
        
@@ -476,7 +517,6 @@ class MultiplicacionMatrizVectorDialog(QWidget):
             QMessageBox.critical(self, "Error", str(e))
 
     def calc_respuesta(self):
-        
         try:
             opcion_seleccionada = self.opciones_calc_combo_box.currentText()
             
@@ -485,11 +525,21 @@ class MultiplicacionMatrizVectorDialog(QWidget):
             elif opcion_seleccionada == "Visualizar transformacion":
                 if not hasattr(self, 'matriz') or not hasattr(self, 'vector_columna'):
                     raise ValueError("La matriz y el vector deben estar correctamente definidos antes de visualizar la transformación.")
-    
+
+                # Eliminar cualquier instancia previa de TransformacionMatrizVisualizadorWidget
+                while self.visualizador_layout.count() > 0:
+                    widget = self.visualizador_layout.takeAt(0).widget()
+                    if widget is not None:
+                        widget.deleteLater()
+
+                # Crear nueva instancia del widget hijo
                 self.visualizador = VisualizadorMatrizPorVector(self.matriz, self.vector_columna)
-                TransformacionMatrizVisualizadorWidget(self.visualizador)
+                transformacion_widget = TransformacionMatrizVisualizadorWidget(self.visualizador)
+
+                # Agregar el widget al diseño de visualización
+                self.visualizador_layout.addWidget(transformacion_widget)
             else:
-                print("Ingrese una opcion válida")        
+                print("Ingrese una opción válida")        
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Error al ejecutar la operación: {str(e)}")
 
@@ -816,43 +866,57 @@ class MultiplicacionMatricesDialog(QWidget):
 class TranspuestaDialog(QWidget):
     def __init__(self):
         super().__init__()
-
-        super().__init__()
         
-        self.setGeometry(100, 100, 400, 300)
-        self.setWindowTitle("Ingresar Matriz")
+        self.setGeometry(100, 100, 600, 400)  # Tamaño inicial ajustado
+        self.setWindowTitle("Transposición de Matriz")
         
-        self.main_layout = QVBoxLayout(self)
-        self.main_layout.setContentsMargins(20, 20, 20, 20)
-        self.main_layout.setSpacing(10)
-        self.main_layout.setAlignment(Qt.AlignTop)
+        self.splitter = QSplitter(Qt.Horizontal, self)
+        
+        self.entrada_widget = QWidget()
+        self.entrada_layout = QVBoxLayout(self.entrada_widget)
+        self.entrada_layout.setContentsMargins(20, 20, 20, 20)
+        self.entrada_layout.setSpacing(10)
+        self.entrada_layout.setAlignment(Qt.AlignTop)
         
         self.entradas = []
         self.grid_layout = None
-        self.resultado_texto = None
-        self.placeholder_respuestas = None
-        self.matriz:Matriz = None
-        
+        self.matriz = None
         self.n_input = QLineEdit()
         self.m_input = self.n_input
-         
+        
         layout_dimensiones_matriz = InterfazHelperMatriz.crear_layout_ingresar_dimensiones(
             labels_inputs=[("Dimensiones de la matriz:", self.n_input)],
             boton_texto="Ingresar Matriz",
-            boton_callback=lambda: InterfazHelperMatriz.ingresar_matriz(instancia=self,
-                                                                  main_layout=self.main_layout,
-                                                                  resultado_texto=self.resultado_texto,
-                                                                  grid_layout=self.grid_layout, 
-                                                                  n_input=self.n_input, 
-                                                                  m_input=self.m_input,
-                                                                  calcular_callback=self.calcular_transpuesta, 
-                                                                  nombre_boton="Calcular Transpuesta",
-                                                                  rectangular=True,
-                                                                  target_layout=self.main_layout
-                                                                )
-         )
+            boton_callback=lambda: InterfazHelperMatriz.ingresar_matriz(
+                instancia=self,
+                main_layout=self.entrada_layout,
+                resultado_texto=None,
+                grid_layout=self.grid_layout,
+                n_input=self.n_input,
+                m_input=self.m_input,
+                calcular_callback=self.calcular_transpuesta,
+                nombre_boton="Calcular Transpuesta",
+                rectangular=True,
+                target_layout=self.entrada_layout
+            )
+        )
+        self.entrada_layout.addLayout(layout_dimensiones_matriz)
         
-        self.main_layout.addLayout(layout_dimensiones_matriz) 
+        # Lado derecho: Contenedor de resultados
+        self.resultado_widget = QWidget()
+        self.resultado_layout = QVBoxLayout(self.resultado_widget)
+        self.resultado_layout.setContentsMargins(20, 20, 20, 20)
+        self.resultado_layout.setSpacing(10)
+        self.resultado_layout.setAlignment(Qt.AlignTop)
+        
+        # Añadir widgets al splitter
+        self.splitter.addWidget(self.entrada_widget)
+        self.splitter.addWidget(self.resultado_widget)
+        self.splitter.setSizes([300, 300])  # Configurar tamaños iniciales
+
+        # Layout principal
+        self.main_layout = QVBoxLayout(self)
+        self.main_layout.addWidget(self.splitter)
     
     def calcular_transpuesta(self):
         try:
@@ -860,14 +924,16 @@ class TranspuestaDialog(QWidget):
             
             matriz_transpuesta = Matriz.transponer_matriz(self.matriz)
             
-            InterfazHelperMatriz.limpiar_resultados_texto(self.resultado_texto, self.main_layout)
+            while self.resultado_layout.count() > 0:
+                widget = self.resultado_layout.takeAt(0).widget()
+                if widget is not None:
+                    widget.deleteLater()
             
-            self.resultado_texto = InterfazHelperMatriz.mostrar_resultados(
+            resultado_texto = InterfazHelperMatriz.mostrar_resultados(
                 f"Matriz original:\n{self.matriz.mostrar()}\n\nMatriz Transpuesta:\n{matriz_transpuesta.mostrar()}"
             )
-    
-            self.main_layout.addWidget(self.resultado_texto)
-            
+            self.resultado_layout.addWidget(resultado_texto)
+        
         except ValueError as e:
             QMessageBox.critical(self, "Error", f"Error al ingresar datos: {str(e)}")
 
@@ -875,40 +941,61 @@ class DeterminanteDialog(QWidget):
     def __init__(self):
         super().__init__()
         
-        self.setGeometry(100, 100, 400, 300)
-        self.setWindowTitle("Ingresar Matriz")
+        self.setGeometry(100, 100, 600, 400)  # Tamaño ajustado
+        self.setWindowTitle("Cálculo del Determinante")
         
-        self.main_layout = QVBoxLayout(self)
-        self.main_layout.setContentsMargins(20, 20, 20, 20)
-        self.main_layout.setSpacing(10)
-        self.main_layout.setAlignment(Qt.AlignTop)
+        # Crear un QSplitter para dividir la ventana en dos partes
+        self.splitter = QSplitter(Qt.Horizontal, self)
         
+        # Lado izquierdo: Contenedor de entrada
+        self.entrada_widget = QWidget()
+        self.entrada_layout = QVBoxLayout(self.entrada_widget)
+        self.entrada_layout.setContentsMargins(20, 20, 20, 20)
+        self.entrada_layout.setSpacing(10)
+        self.entrada_layout.setAlignment(Qt.AlignTop)
+        
+        # Configuración de entradas
         self.entradas = []
         self.grid_layout = None
-        self.resultado_texto = None
-        self.placeholder_respuestas = None
         self.matriz = None
-        
+        self.resultado_texto = None
         self.n_input = QLineEdit()
         self.m_input = self.n_input
-         
+        
+        # Layout para ingresar dimensiones de la matriz
         layout_dimensiones_matriz = InterfazHelperMatriz.crear_layout_ingresar_dimensiones(
             labels_inputs=[("Dimensiones de la matriz:", self.n_input)],
             boton_texto="Ingresar Matriz",
-            boton_callback=lambda: InterfazHelperMatriz.ingresar_matriz(instancia=self,
-                                                                  main_layout=self.main_layout,
-                                                                  resultado_texto=self.resultado_texto,
-                                                                  grid_layout=self.grid_layout, 
-                                                                  n_input=self.n_input, 
-                                                                  m_input=self.m_input,
-                                                                  calcular_callback=self.calcular_determinante, 
-                                                                  nombre_boton="Calcular determinante",
-                                                                  rectangular=True,
-                                                                  target_layout=self.main_layout
-                                                                )
-         )
+            boton_callback=lambda: InterfazHelperMatriz.ingresar_matriz(
+                instancia=self,
+                main_layout=self.entrada_layout,
+                resultado_texto=None,
+                grid_layout=self.grid_layout,
+                n_input=self.n_input,
+                m_input=self.m_input,
+                calcular_callback=self.calcular_determinante,
+                nombre_boton="Calcular determinante",
+                rectangular=True,
+                target_layout=self.entrada_layout
+            )
+        )
+        self.entrada_layout.addLayout(layout_dimensiones_matriz)
         
-        self.main_layout.addLayout(layout_dimensiones_matriz) 
+        # Lado derecho: Contenedor de resultados
+        self.resultado_widget = QWidget()
+        self.resultado_layout = QVBoxLayout(self.resultado_widget)
+        self.resultado_layout.setContentsMargins(20, 20, 20, 20)
+        self.resultado_layout.setSpacing(10)
+        self.resultado_layout.setAlignment(Qt.AlignTop)
+        
+        # Añadir widgets al splitter
+        self.splitter.addWidget(self.entrada_widget)
+        self.splitter.addWidget(self.resultado_widget)
+        self.splitter.setSizes([300, 300])  # Configurar tamaños iniciales
+
+        # Layout principal
+        self.main_layout = QVBoxLayout(self)
+        self.main_layout.addWidget(self.splitter)
     
     def calcular_determinante(self):
         try:
@@ -922,7 +1009,7 @@ class DeterminanteDialog(QWidget):
                 f"Determinante:\n{det}\n\nPasos:\n{pasos}"
             )
     
-            self.main_layout.addWidget(self.resultado_texto)
+            self.resultado_layout.addWidget(self.resultado_texto)
             
         except ValueError as e:
             QMessageBox.critical(self, "Error", f"Error al ingresar datos: {str(e)}")
@@ -931,39 +1018,59 @@ class CramerDialog(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Resolver Sistema por Regla de Cramer")
-        self.setMinimumWidth(400)
+        self.setMinimumWidth(600)
         self.setMinimumHeight(400)
-    
-        self.main_layout = QVBoxLayout(self)
-        self.main_layout.setAlignment(Qt.AlignTop)
+
+        # Crear un QSplitter para dividir la ventana en dos partes
+        self.splitter = QSplitter(Qt.Horizontal, self)
+
+        # Lado izquierdo: Configuración de matriz y vector
+        self.entrada_widget = QWidget()
+        self.entrada_layout = QVBoxLayout(self.entrada_widget)
+        self.entrada_layout.setContentsMargins(20, 20, 20, 20)
+        self.entrada_layout.setSpacing(10)
+        self.entrada_layout.setAlignment(Qt.AlignTop)
 
         self.n_input = QLineEdit()
         self.n_input.setPlaceholderText("Número de ecuaciones (n)")
         self.grid_layout = None
 
-
         layout_dimensiones = InterfazHelperMatriz.crear_layout_ingresar_dimensiones(
             labels_inputs=[("Número de ecuaciones:", self.n_input)],
             boton_texto="Configurar Matriz",
-            boton_callback=lambda: InterfazHelperMatriz.configurar_matriz_y_vector(instancia=self,
-                                                                  main_layout=self.main_layout,
-                                                                  resultado_texto=self.resultado_texto,
-                                                                  grid_layout=self.grid_layout, 
-                                                                  n_input=self.n_input, 
-                                                                  calcular_callback=self.calcular_cramer, 
-                                                                  nombre_boton="Calcular por regla de Cramer",
-                                                                  target_layout=self.main_layout,
-                                                                )
-         
+            boton_callback=lambda: InterfazHelperMatriz.configurar_matriz_y_vector(
+                instancia=self,
+                main_layout=self.entrada_layout,
+                resultado_texto=None,
+                grid_layout=self.grid_layout,
+                n_input=self.n_input,
+                calcular_callback=self.calcular_cramer,
+                nombre_boton="Calcular por regla de Cramer",
+                target_layout=self.entrada_layout,
+            )
         )
-        
-        self.main_layout.addLayout(layout_dimensiones)
-        
-        self.layout_grid = None
-        self.resultado_texto = None
-        
+        self.entrada_layout.addLayout(layout_dimensiones)
+
         self.entradas_matriz = []
         self.entradas_vector = []
+
+        # Lado derecho: Resultados
+        self.resultado_widget = QWidget()
+        self.resultado_layout = QVBoxLayout(self.resultado_widget)
+        self.resultado_layout.setContentsMargins(20, 20, 20, 20)
+        self.resultado_layout.setSpacing(10)
+        self.resultado_layout.setAlignment(Qt.AlignTop)
+
+        # Añadir widgets al splitter
+        self.splitter.addWidget(self.entrada_widget)
+        self.splitter.addWidget(self.resultado_widget)
+        self.splitter.setSizes([300, 300])  # Configurar tamaños iniciales
+
+        # Layout principal
+        self.main_layout = QVBoxLayout(self)
+        self.main_layout.addWidget(self.splitter)
+
+        self.resultado_texto = None
 
     def calcular_cramer(self):
         try:
@@ -982,7 +1089,7 @@ class CramerDialog(QWidget):
                 InterfazHelperMatriz.limpiar_resultados_texto(self.resultado_texto, self.main_layout)
                 resultado_texto_widget = InterfazHelperMatriz.mostrar_resultados(f"Soluciones:\n{texto_resultado}\n\nPasos:\n{mensaje_o_pasos}")
                 
-                self.main_layout.addWidget(resultado_texto_widget)
+                self.resultado_layout.addWidget(resultado_texto_widget)
                 self.resultado_texto = resultado_texto_widget
 
         except ValueError as e:
@@ -991,41 +1098,66 @@ class CramerDialog(QWidget):
             QMessageBox.critical(self, "Error", f"Error inesperado: {str(e)}")
 
 class InversaTab(QWidget):
+
     def __init__(self):
         super().__init__()
-        
-        self.main_layout = QVBoxLayout(self)
-        self.main_layout.setContentsMargins(20, 20, 20, 20)
-        self.main_layout.setSpacing(10)
-        self.main_layout.setAlignment(Qt.AlignTop)
-        
+        self.setWindowTitle("Cálculo de Matriz Inversa")
+        self.setMinimumWidth(600)
+        self.setMinimumHeight(400)
+
+        # Crear un QSplitter para dividir la ventana en dos partes
+        self.splitter = QSplitter(Qt.Horizontal, self)
+
+        # Lado izquierdo: Configuración de la matriz
+        self.entrada_widget = QWidget()
+        self.entrada_layout = QVBoxLayout(self.entrada_widget)
+        self.entrada_layout.setContentsMargins(20, 20, 20, 20)
+        self.entrada_layout.setSpacing(10)
+        self.entrada_layout.setAlignment(Qt.AlignTop)
+
         self.entradas = []
         self.grid_layout = None
         self.resultado_texto = None
-        self.placeholder_respuestas = None
         self.matriz = None
-        
+
         self.n_input = QLineEdit()
+        self.n_input.setPlaceholderText("Dimensiones de la matriz (n x n)")
         self.m_input = self.n_input
-         
+
         layout_dimensiones_matriz = InterfazHelperMatriz.crear_layout_ingresar_dimensiones(
             labels_inputs=[("Dimensiones de la matriz:", self.n_input)],
             boton_texto="Ingresar Matriz",
             boton_callback=lambda: InterfazHelperMatriz.ingresar_matriz(
                 instancia=self,
-                main_layout=self.main_layout,
-                resultado_texto=self.resultado_texto,
+                main_layout=self.entrada_layout,
+                resultado_texto=None,
                 grid_layout=self.grid_layout, 
                 n_input=self.n_input, 
                 m_input=self.m_input,
                 calcular_callback=self.calcular_inversa, 
                 nombre_boton="Calcular matriz Inversa",
-                target_layout=self.main_layout,
-                rectangular=True
+                target_layout=self.entrada_layout,
             )
         )
         
-        self.main_layout.addLayout(layout_dimensiones_matriz)
+        self.entrada_layout.addLayout(layout_dimensiones_matriz)
+
+        # Lado derecho: Resultados
+        self.resultado_widget = QWidget()
+        self.resultado_layout = QVBoxLayout(self.resultado_widget)
+        self.resultado_layout.setContentsMargins(20, 20, 20, 20)
+        self.resultado_layout.setSpacing(10)
+        self.resultado_layout.setAlignment(Qt.AlignTop)
+
+        # Añadir widgets al splitter
+        self.splitter.addWidget(self.entrada_widget)
+        self.splitter.addWidget(self.resultado_widget)
+        self.splitter.setSizes([300, 300])  # Configurar tamaños iniciales
+
+        # Layout principal
+        self.main_layout = QVBoxLayout(self)
+        self.main_layout.addWidget(self.splitter)
+
          
     def calcular_inversa(self):
         try:
@@ -1038,7 +1170,7 @@ class InversaTab(QWidget):
                 f"Matriz inversa:\n{matriz_inversa.mostrar()}\n\nPasos:\n{pasos}"
             )
             
-            self.main_layout.addWidget(self.resultado_texto)
+            self.resultado_layout.addWidget(self.resultado_texto)
             
         except ValueError as e:
             QMessageBox.critical(self, "Error", f"{str(e)}")

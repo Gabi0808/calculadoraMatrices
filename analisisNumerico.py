@@ -136,12 +136,10 @@ class Funcion:
             f_a = self.evaluar_funcion(a)
             f_b = self.evaluar_funcion(b)
             
-            # Verificar que f(a) y f(b) tienen signos opuestos
             if f_a * f_b > 0:
                 registro += "Error: Los extremos a y b no encierran una raíz.\n"
                 return None, registro, puntos
             
-            # Calcular c con la fórmula corregida
             if f_b - f_a == 0:
                 registro += "Error: División por cero en la fórmula de c.\n"
                 return None, registro, puntos
@@ -149,19 +147,15 @@ class Funcion:
             c = b - f_b * (b - a) / (f_b - f_a)
             f_c = self.evaluar_funcion(c)
             
-            # Guardar los puntos
             puntos.append((a, b, c))
             
-            # Registro de la iteración
             error = abs(c - c_anterior)
             registro += f"Iteración {iteracion}: a = {a}, b = {b}, c = {c}, f(c) = {f_c}, Error absoluto = {error:.6e}\n"
             
-            # Verificar tolerancia o raíz exacta
             if abs(f_c) < tolerancia or error < tolerancia:
                 registro += f"\nRaíz aproximada encontrada: {c} en iteración {iteracion}.\n"
                 return c, registro, puntos
             
-            # Actualizar límites para la siguiente iteración
             if f_a * f_c < 0:
                 b = c
                 f_b = f_c
@@ -179,16 +173,27 @@ class Funcion:
     def secante(self, x0, x1, tolerancia=1e-6, max_iter=100):
         registro = ""
         puntos_por_raiz = []
+
         for iteracion in range(max_iter):
             f_x0 = self.evaluar_funcion(x0)
             f_x1 = self.evaluar_funcion(x1)
+
             if f_x1 - f_x0 == 0:
+                registro += f"\nDivisión por cero detectada en la iteración {iteracion}. El método se detiene.\n"
                 break
+
             x2 = x1 - f_x1 * (x1 - x0) / (f_x1 - f_x0)
             puntos_por_raiz.append((x0, x1))
-            registro += f"Iteración {iteracion}: x0={x0}, x1={x1}, x2={x2}\n"
-            if abs(x2 - x1) < tolerancia:
-                return x2, registro, puntos_por_raiz
-            x0, x1 = x1, x2
-        return None, "No se encontró una raíz en el límite de iteraciones.", puntos_por_raiz
 
+            # Registrar la iteración
+            registro += f"Iteración {iteracion}: x0={x0}, x1={x1}, x2={x2}\n"
+
+
+            if abs(x2 - x1) < tolerancia:
+                registro += f"\nRaíz aproximada encontrada: {x2}\n"
+                return x2, registro, puntos_por_raiz
+
+            x0, x1 = x1, x2
+
+        registro += "\nNo se encontró una raíz en el límite de iteraciones.\n"
+        return None, registro, puntos_por_raiz
