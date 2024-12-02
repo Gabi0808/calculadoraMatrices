@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QSplitter,QMessageBox)
+from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QSplitter,QMessageBox, QTableWidget)
 from PyQt5.QtCore import Qt, QTimer
 import sympy as sym
 from analisisNumerico import Funcion
@@ -28,10 +28,13 @@ class BiseccionTab(QWidget):
 
         entradas_layout.addLayout(contenedor_intervalos)
         
+        self.table_widget_resultado = QTableWidget()
+        self.label_raiz = QLabel()
+
         entradas_layout.addWidget(self.boton_calcular)
         entradas_layout.addWidget(self.boton_siguiente)
-        entradas_layout.addWidget(QLabel("Registro de iteraciones:"))
-        entradas_layout.addWidget(self.text_edit_resultado)
+        entradas_layout.addWidget(self.label_raiz)
+        entradas_layout.addWidget(self.table_widget_resultado)
 
         grafico_widget, self.canvas = InterfazHelperAnalisisNumerico.crear_canvas_widget(self)
 
@@ -88,12 +91,16 @@ class BiseccionTab(QWidget):
             a = float(self.input_a.text())
             b = float(self.input_b.text())
             self.funcion = Funcion(funcion_texto)
-            self.raices, self.registros, self.puntos_por_raiz = self.funcion.biseccion_multiple(a, b, subintervalos=10, tolerancia=1e-6)
+            self.raices, self.puntos_por_raiz, self.tablas = self.funcion.biseccion_multiple(a, b, subintervalos=10, tolerancia=1e-6)
             self.raiz_actual = 0
             self.iteracion_actual = 0
             if self.raices:
                 self.boton_siguiente.setEnabled(True)
-                self.text_edit_resultado.setText(self.registros[0])
+                self.label_raiz.setText(f"Raiz aproximada: {self.raices[self.raiz_actual]:.6g}")
+                self.label_raiz.setContentsMargins(15, 15, 15, 15)
+                header = ["Iteración", "a", "b", "c", "Error Relativo"]
+                InterfazHelperAnalisisNumerico.modificar_tabla(self.tablas[self.raiz_actual], self.table_widget_resultado, header)
+
 
                 # Pasar los valores de a, b, c de la primera iteración a actualizar_grafico
                 a, b, c = self.puntos_por_raiz[self.raiz_actual][self.iteracion_actual]
@@ -112,7 +119,9 @@ class BiseccionTab(QWidget):
             if self.raiz_actual < len(self.raices) - 1:
                 self.raiz_actual += 1
                 self.iteracion_actual = 0
-                self.text_edit_resultado.setText(self.registros[self.raiz_actual])
+                header = ["Iteración", "a", "b", "c", "Error Relativo"]
+                InterfazHelperAnalisisNumerico.modificar_tabla(self.tablas[self.raiz_actual], self.table_widget_resultado, header)
+
             else:
                 QMessageBox.information(self, "Fin", "Todas las iteraciones han terminado.")
                 self.boton_siguiente.setEnabled(False)
@@ -155,8 +164,12 @@ class BiseccionTab(QWidget):
             self.graficar_funcion_async()
             self.grafico_fijo = True
 
-        # Limpiar los puntos de la iteración anterior
-        [p.remove() for p in getattr(self, 'puntos_iteracion', []) if p]
+        if hasattr(self, 'puntos_iteracion'):
+                for p in self.puntos_iteracion:
+                    try:
+                        p.remove()
+                    except ValueError:
+                        pass
         self.puntos_iteracion = []
 
         # Graficar los puntos de a, b, y c de la iteración actual
@@ -198,13 +211,16 @@ class NewtonRaphsonTab(QWidget):
         self.boton_siguiente.setEnabled(False)
         
         self.text_edit_resultado = InterfazHelperAnalisisNumerico.crear_text_edit()
+        self.table_widget_resultado = QTableWidget()
+        self.label_raiz = QLabel()
         
         entradas_layout.addLayout(contenedor_funcion)
         entradas_layout.addLayout(contenedor_inicial)
         entradas_layout.addWidget(self.boton_calcular)
         entradas_layout.addWidget(self.boton_siguiente)
-        entradas_layout.addWidget(QLabel("Registro de iteraciones:"))
-        entradas_layout.addWidget(self.text_edit_resultado)
+        entradas_layout.addWidget(self.label_raiz)
+        entradas_layout.addWidget(self.table_widget_resultado)
+
 
         grafico_widget, self.canvas = InterfazHelperAnalisisNumerico.crear_canvas_widget(self)
 
@@ -219,7 +235,6 @@ class NewtonRaphsonTab(QWidget):
         self.iteraciones = []
         self.iteracion_actual = 0
         self.x_actual = 0
-        self.registro = ""
 
         self.xlim = (-50, 50)
         self.ylim = (-50, 50)
@@ -260,16 +275,21 @@ class NewtonRaphsonTab(QWidget):
             x0 = float(self.input_x0.text())
             self.funcion = Funcion(funcion_texto)
             
-            raiz, registro, puntos = self.funcion.newton_raphson(x0, tolerancia=1e-6)
+            self.raiz, self.iteraciones, self.tabla = self.funcion.newton_raphson(x0, tolerancia=1e-6)
             
-            self.iteraciones = puntos 
-            self.registro = registro
             self.iteracion_actual = 0 
 
-            if raiz is not None:
+            if self.raiz is not None:
                 self.boton_siguiente.setEnabled(True)
-                self.text_edit_resultado.setText(self.registro)
-                self.actualizar_grafico(self.iteraciones[self.iteracion_actual][1])
+                self.label_raiz.setText(f"Raiz aproximada: {self.raiz:.6g}")
+                self.label_raiz.setContentsMargins(15, 15, 15, 15)
+                header = ["Iteración", "x","f'(x)","Error Relativo"]
+                InterfazHelperAnalisisNumerico.modificar_tabla(self.tabla, self.table_widget_resultado, header)
+            
+                # Graficar los puntos de la primera iteración
+                x0, x1, error = self.iteraciones[self.iteracion_actual]
+                self.actualizar_grafico(x0)
+            
             else:
                 QMessageBox.information(self, "Resultado", "No se encontró una raíz con el método Newton-Raphson.")
         except ValueError as e:
@@ -317,7 +337,12 @@ class NewtonRaphsonTab(QWidget):
             self.graficar_funcion_async()
             self.grafico_fijo = True
 
-        [p.remove() for p in getattr(self, 'puntos_iteracion', []) if p]
+        if hasattr(self, 'puntos_iteracion'):
+            for p in self.puntos_iteracion:
+                try:
+                    p.remove()
+                except ValueError:
+                    pass
         self.puntos_iteracion = []
 
         f_x = self.funcion.evaluar_funcion(x)
@@ -356,14 +381,15 @@ class FalsaPosicionTab(QWidget):
         self.boton_siguiente = InterfazHelperAnalisisNumerico.crear_boton("Siguiente Iteración", self.siguiente_iteracion)
         self.boton_siguiente.setEnabled(False)
         
-        self.text_edit_resultado = InterfazHelperAnalisisNumerico.crear_text_edit()
-        
+        self.table_widget_resultado = QTableWidget()
+
         entradas_layout.addLayout(contenedor_funcion)
         entradas_layout.addLayout(contenedor_intervalos)
         entradas_layout.addWidget(self.boton_calcular)
         entradas_layout.addWidget(self.boton_siguiente)
-        entradas_layout.addWidget(QLabel("Registro de iteraciones:"))
-        entradas_layout.addWidget(self.text_edit_resultado)
+        self.label_raiz = QLabel()
+        entradas_layout.addWidget(self.label_raiz)
+        entradas_layout.addWidget(self.table_widget_resultado)
 
         grafico_widget, self.canvas = InterfazHelperAnalisisNumerico.crear_canvas_widget(self)
 
@@ -393,45 +419,64 @@ class FalsaPosicionTab(QWidget):
         self.timer.start()
 
     def actualizar_latex_async(self):
+        """
+        Actualiza el contenido LaTeX de la función ingresada. Si no es válida,
+        simplemente detiene el proceso sin mostrar errores.
+        """
         self.timer.stop()
         funcion_texto = self.input_funcion.text()
         try:
+            # Intenta crear la función
             self.funcion = Funcion(funcion_texto)
             latex_str = sym.latex(self.funcion.funcion)
             
+            # Renderizar el LaTeX solo si la función es válida
             if self.render_thread is None or not self.render_thread.isRunning():
                 self.render_thread = RenderThread(latex_str)
                 self.render_thread.update_image_signal.connect(self.mostrar_imagen)
                 self.render_thread.start()
-                
+
+            # Graficar la función
             self.graficar_funcion_async()
-            
+
         except Exception:
-            self.latex_label.clear()
+            # Si hay un error, simplemente detén la actualización
+            self.funcion = None  # Marca la función como inválida
+            self.latex_label.clear()  # Limpia cualquier representación previa
 
     def mostrar_imagen(self, pixmap):
         self.latex_label.setPixmap(pixmap)
 
     def calcular_falsa_posicion(self):
+        """
+        Calcula el método de falsa posición. Si la función no es válida, 
+        detiene el proceso y registra el error.
+        """
         try:
             funcion_texto = self.input_funcion.text()
             a = float(self.input_a.text())
             b = float(self.input_b.text())
             self.funcion = Funcion(funcion_texto)
-            self.raiz, self.registro, self.puntos_por_raiz = self.funcion.falsa_posicion(a, b, tolerancia=1e-6)
+
+            self.raiz, self.puntos_por_raiz, self.tabla = self.funcion.falsa_posicion(a, b, tolerancia=1e-6)
             self.iteracion_actual = 0
             if self.raiz:
                 self.boton_siguiente.setEnabled(True)
-                self.text_edit_resultado.setText(self.registro)
+                self.label_raiz.setText(f"Raiz aproximada: {self.raiz:.6g}")
+                self.label_raiz.setContentsMargins(15, 15, 15, 15)
+                header = ["Iteración", "a", "b", "c", "f(c)","Error Relativo"]
+                InterfazHelperAnalisisNumerico.modificar_tabla(self.tabla, self.table_widget_resultado, header)
 
                 # Pasar los valores de a, b, c de la primera iteración a actualizar_grafico
                 a, b, c = self.puntos_por_raiz[self.iteracion_actual]
                 self.actualizar_grafico(a, b, c)
             else:
-                QMessageBox.information(self, "Resultado", "No se encontraron raíces.")
+                self.text_edit_resultado.setText("No se encontraron raíces.")
         except ValueError as e:
+            # Error en la entrada del usuario
             QMessageBox.critical(self, "Error", f"Entrada no válida: {e}")
         except Exception as e:
+            # Otro error durante el cálculo
             QMessageBox.critical(self, "Error", f"Ocurrió un error: {e}")
 
     def siguiente_iteracion(self):
@@ -464,8 +509,6 @@ class FalsaPosicionTab(QWidget):
         self.canvas.ax.plot(x_vals, y_vals, label="f(x)", color='blue')
         self.canvas.ax.axhline(0, color='black', linewidth=0.7)
         self.canvas.ax.axvline(0, color='black', linewidth=0.7)
-        self.canvas.ax.set_xlim(self.xlim)
-        self.canvas.ax.set_ylim(self.ylim)
         self.canvas.ax.set_xlim(self.initial_xlim)
         self.canvas.ax.set_ylim(self.initial_ylim)
         self.canvas.ax.set_aspect('equal', adjustable='box')
@@ -477,8 +520,13 @@ class FalsaPosicionTab(QWidget):
             self.graficar_funcion_async()
             self.grafico_fijo = True
 
-        # Limpiar los puntos de la iteración anterior
-        [p.remove() for p in getattr(self, 'puntos_iteracion', []) if p]
+        # Limpiar puntos de la iteración anterior
+        if hasattr(self, 'puntos_iteracion'):
+            for p in self.puntos_iteracion:
+                try:
+                    p.remove()
+                except ValueError:
+                    pass
         self.puntos_iteracion = []
 
         # Graficar los puntos de a, b, y c de la iteración actual
@@ -528,15 +576,18 @@ class SecanteTab(QWidget):
         self.boton_siguiente.setEnabled(False)
 
         # Campo para mostrar resultados
-        self.text_edit_resultado = InterfazHelperAnalisisNumerico.crear_text_edit()
+        #self.text_edit_resultado = InterfazHelperAnalisisNumerico.crear_text_edit()
+        self.table_widget_resultado = QTableWidget()
+        self.label_raiz = QLabel()
 
         # Agregar widgets al layout de entrada
         entradas_layout.addLayout(contenedor_funcion)
         entradas_layout.addLayout(contenedor_intervalos)
         entradas_layout.addWidget(self.boton_calcular)
         entradas_layout.addWidget(self.boton_siguiente)
-        entradas_layout.addWidget(QLabel("Registro de iteraciones:"))
-        entradas_layout.addWidget(self.text_edit_resultado)
+        #entradas_layout.addWidget(QLabel("Registro de iteraciones:"))
+        entradas_layout.addWidget(self.label_raiz)
+        entradas_layout.addWidget(self.table_widget_resultado)
 
         # Panel derecho (Gráficos)
         grafico_widget, self.canvas = InterfazHelperAnalisisNumerico.crear_canvas_widget(self)
@@ -594,12 +645,15 @@ class SecanteTab(QWidget):
             x1 = float(self.input_x1.text())
             self.funcion = Funcion(funcion_texto)
 
-            self.raiz, self.registro, self.puntos_por_raiz = self.funcion.secante(x0, x1, tolerancia=1e-6)
+            self.raiz, self.registro, self.puntos_por_raiz, self.tabla = self.funcion.secante(x0, x1, tolerancia=1e-6)
             self.iteracion_actual = 0
 
             if self.raiz:
                 self.boton_siguiente.setEnabled(True)
-                self.text_edit_resultado.setText(self.registro)
+                self.label_raiz.setText(f"Raiz aproximada: {self.raiz:.6g}")
+                self.label_raiz.setContentsMargins(15, 15, 15, 15)
+                header = ["Iteración", "x0", "x1", "x2", "Error Relativo"]
+                InterfazHelperAnalisisNumerico.modificar_tabla(self.tabla, self.table_widget_resultado, header)
 
                 # Graficar los puntos de la primera iteración
                 x_prev, x_curr = self.puntos_por_raiz[self.iteracion_actual]
@@ -655,11 +709,19 @@ class SecanteTab(QWidget):
             self.grafico_fijo = True
 
         if hasattr(self, 'linea_secante') and self.linea_secante:
-            self.linea_secante.remove()
+            try:
+                self.linea_secante.remove()
+            except ValueError:
+                pass
             self.linea_secante = None
 
         # Limpiar puntos de la iteración anterior
-        [p.remove() for p in getattr(self, 'puntos_iteracion', []) if p]
+        if hasattr(self, 'puntos_iteracion'):
+            for p in self.puntos_iteracion:
+                try:
+                    p.remove()
+                except ValueError:
+                    pass
         self.puntos_iteracion = []
 
         # Graficar puntos de la iteración actual

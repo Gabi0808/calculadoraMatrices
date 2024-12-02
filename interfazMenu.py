@@ -152,7 +152,7 @@ class MenuPrincipal(QWidget):
         self.cambiar_a_analisis_numerico = cambiar_a_analisis_numerico
         self.cambiar_a_vectores = cambiar_a_vectores
 
-       # Layout principal horizontal
+        # Layout principal horizontal
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)  # Sin márgenes
         layout.setSpacing(0)  # Sin espacios entre layouts
@@ -200,33 +200,86 @@ class MenuPrincipal(QWidget):
         boton_analisis.clicked.connect(self.cambiar_a_analisis_numerico)
         barra_layout.addWidget(boton_analisis, alignment=Qt.AlignCenter)
 
+        boton_ayuda = QPushButton()
+        boton_ayuda.setToolTip("Ayuda")
+        boton_ayuda.setFixedSize(100, 100)
+        boton_ayuda.setIcon(QIcon(os.path.join("Assets", "ayuda.png")))
+        boton_ayuda.setIconSize(boton_ayuda.size())
+        boton_ayuda.clicked.connect(self.cambiar_a_analisis_numerico)
+        barra_layout.addWidget(boton_ayuda, alignment=Qt.AlignCenter)
+
+        boton_ajustes = QPushButton()
+        boton_ajustes.setToolTip("Ajustes")
+        boton_ajustes.setFixedSize(100, 100)
+        boton_ajustes.setIcon(QIcon(os.path.join("Assets", "ajustes.png")))
+        boton_ajustes.setIconSize(boton_ajustes.size())
+        boton_ajustes.clicked.connect(self.cambiar_a_analisis_numerico)
+        barra_layout.addWidget(boton_ajustes, alignment=Qt.AlignCenter)
+
         barra_layout.addStretch()
-        layout.addWidget(barra_widget)  # Agregar la barra lateral al layout principal
+        layout.addWidget(barra_widget)
+          # Agregar la barra lateral al layout principal
 
         # ---------------------
         # Sección central
         # ---------------------
+        seccion_central_widget = QWidget()  # Contenedor para alinear correctamente
         seccion_central_layout = QVBoxLayout()
-        seccion_central_layout.setAlignment(Qt.AlignCenter)
+        seccion_central_layout.setContentsMargins(20, 20, 0, 20)  # Sin márgenes
+        seccion_central_layout.setSpacing(20)  # Espacio entre elementos
+        seccion_central_layout.setAlignment(Qt.AlignTop)  # Alineación hacia arriba
 
         # Logo
         ruta_logo = os.path.join("Assets", "logoSticker.png")
         logo = QLabel()
         pixmap = QPixmap(ruta_logo)
-        logo.setPixmap(pixmap.scaled(400, 400, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        logo.setPixmap(pixmap.scaled(300, 300, Qt.KeepAspectRatio, Qt.SmoothTransformation))  # Ajustar tamaño del logo
         logo.setAlignment(Qt.AlignCenter)
-        seccion_central_layout.addWidget(logo)
+        seccion_central_layout.addWidget(logo, alignment=Qt.AlignCenter)
 
-        # Descripción
-        descripcion = QLabel("Descripción breve del sistema de cálculo.")
+        # Descripción personalizada
+        descripcion = QLabel(
+            "¡Bienvenido a VisualCalc!\n\n"
+            "VisualCalc es un sistema interactivo diseñado para trabajar con matrices, "
+            "vectores y métodos de análisis numérico, ofreciendo explicaciones paso a paso.\n\n"
+            "¿En qué quieres trabajar hoy?"
+        )
+        descripcion.setWordWrap(True)  # Ajuste de línea
         descripcion.setAlignment(Qt.AlignCenter)
-        descripcion.setStyleSheet("font-size: 16px; color: #4b4b4b;")
-        seccion_central_layout.addWidget(descripcion)
+        descripcion.setStyleSheet("font-size: 18px; color: #089bac; max-width: 600px;")
+        seccion_central_layout.addWidget(descripcion, alignment=Qt.AlignCenter)
 
-        # Agregar sección central al layout principal
-        seccion_central_widget = QWidget()
+        # Botones principales
+        botones_layout = QHBoxLayout()
+        botones_layout.setSpacing(20)
+
+        boton_matrices_central = QPushButton("Matrices")
+        boton_matrices_central.setFixedSize(180, 50)
+        boton_matrices_central.setStyleSheet("font-size: 16px; background-color: #089bac; color: white;")
+        boton_matrices_central.clicked.connect(self.cambiar_a_matrices)
+        botones_layout.addWidget(boton_matrices_central)
+
+        boton_vectores_central = QPushButton("Vectores")
+        boton_vectores_central.setFixedSize(180, 50)
+        boton_vectores_central.setStyleSheet("font-size: 16px; background-color: #089bac; color: white;")
+        boton_vectores_central.clicked.connect(self.cambiar_a_vectores)
+        botones_layout.addWidget(boton_vectores_central)
+
+        boton_analisis_central = QPushButton("Análisis Numérico")
+        boton_analisis_central.setFixedSize(180, 50)
+        boton_analisis_central.setStyleSheet("font-size: 16px; background-color: #089bac; color: white;")
+        boton_analisis_central.clicked.connect(self.cambiar_a_analisis_numerico)
+        botones_layout.addWidget(boton_analisis_central)
+
+        # Agregar los botones al layout central
+        seccion_central_layout.addLayout(botones_layout)
+
+        # Establecer el layout para el contenedor central
         seccion_central_widget.setLayout(seccion_central_layout)
-        layout.addWidget(seccion_central_widget, stretch=1)
+
+        # Agregar el contenedor central al layout principal con alineación explícita
+
+        layout.addWidget(seccion_central_widget, alignment=Qt.AlignHCenter | Qt.AlignTop, stretch=1)
 
         # ---------------------
         # Imagen derecha

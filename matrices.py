@@ -146,7 +146,7 @@ class Matriz:
         resultado_final = Vector(len(resultado), resultado, orientacion="vertical")
         gestor_pasos.agregar_paso("Resultado final después de sumar las filas:", vector=Formateador.box_vector(resultado_final.vector))
         
-        return resultado, gestor_pasos.mostrar_pasos()
+        return resultado_final, gestor_pasos.mostrar_pasos()
     
     def escalar_matriz(self, escalar=1):
         nueva_matriz = [

@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import (
     QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QLineEdit,
-    QPushButton, QMessageBox, QTextEdit, QWidget, QLayout, QDockWidget
+    QPushButton, QMessageBox, QTextEdit, QWidget, QLayout, QCheckBox, QTableWidget, QTableWidgetItem
 )
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QPropertyAnimation, QEasingCurve
 from PyQt5.QtGui import QPixmap
@@ -246,16 +246,35 @@ class InterfazHelperMatriz:
             return None, None, None
 
     @staticmethod
-    def mostrar_resultados(texto):
+    def mostrar_resultados(texto, pasos=None):
         
+        respuestas_layout = QVBoxLayout()
+        respuestas_layout.setAlignment(Qt.AlignTop)
+        respuestas_widget = QWidget()
         resultado_texto = QTextEdit()
         resultado_texto.setReadOnly(True)
-        resultado_texto.setFontFamily("Courier New")  # Fuente monoespaciada
-        resultado_texto.setFontPointSize(14)
-        resultado_texto.setFontWeight(1000)
         resultado_texto.setText(texto)
+        resultado_texto.setMaximumHeight(200)
+
+        respuestas_layout.addWidget(resultado_texto)
+
+        if pasos:
+            pasos_texto = QTextEdit()
+            pasos_texto.setReadOnly(True)
+            pasos_texto.setText(pasos)
+            pasos_texto.setVisible(False)
+
+            toggle_pasos_checkbox = QCheckBox("Mostrar pasos detallados")
+            toggle_pasos_checkbox.stateChanged.connect(
+                lambda state: pasos_texto.setVisible(state == Qt.Checked)
+            )
+
+            respuestas_layout.addWidget(toggle_pasos_checkbox)
+            respuestas_layout.addWidget(pasos_texto)
         
-        return resultado_texto
+        respuestas_widget.setLayout(respuestas_layout)
+
+        return respuestas_widget
     
     @staticmethod
     def limpiar_resultados_texto(resultado_texto, main_layout):
@@ -451,6 +470,23 @@ class InterfazHelperAnalisisNumerico:
         contenedor_funcion.addLayout(simbolos_layout)
 
         return contenedor_funcion, input_funcion, latex_label
+    
+    @staticmethod
+    def modificar_tabla(tabla, table_widget, header):
+        
+        table_widget.setRowCount(len(tabla))  # Número de filas
+        table_widget.setColumnCount(len(tabla[0]))  # Número de columnas
+        
+        # Establecer los nombres de las columnas
+        table_widget.setHorizontalHeaderLabels(header)
+        
+        # Rellenar las celdas con los datos
+        for row in range(len(tabla)):
+            for col in range(len(tabla[0])):
+                table_widget.setItem(row, col, QTableWidgetItem(tabla[row][col]))
+    
+        table_widget.resizeColumnsToContents()
+
 
 class InterfazHelperVector:
     @staticmethod
@@ -518,7 +554,7 @@ class InterfazHelperVector:
         escalar_line_edit = QLineEdit()
         escalar_input_layout.addWidget(label)
         escalar_input_layout.addWidget(escalar_line_edit)
-        entrada_escalar = [(label, escalar_line_edit)]
+        #entrada_escalar = [(label, escalar_line_edit)]
 
         # Layout para los componentes del vector
         grid_layout = QGridLayout()
@@ -540,12 +576,12 @@ class InterfazHelperVector:
             else:
                 raise ValueError("La orientación debe ser 'vertical' u 'horizontal'")
 
-            entradas_vector.append((etiqueta, entrada))
+            entradas_vector.append(entrada)
 
         contenedor_vectores_inputs.addLayout(escalar_input_layout)
         contenedor_vectores_inputs.addLayout(grid_layout)
 
-        return entrada_escalar, entradas_vector, contenedor_vectores_inputs
+        return escalar_line_edit, entradas_vector, contenedor_vectores_inputs
 
     @staticmethod
     def agregar_campo_vector(vector_inputs, escalar_inputs, layout, n, orientacion="vertical"):
@@ -555,31 +591,32 @@ class InterfazHelperVector:
         escalar_inputs.append(entrada_escalar)
 
     @staticmethod
-    def eliminar_vector(vector_inputs, entrada_escalar, inputs_layout):
+    def eliminar_vector(vector_inputs, escalar_inputs, target_layout):
         if vector_inputs:
-            entradas_vector = vector_inputs.pop()
-            entrada_escalar = entrada_escalar.pop()
+            # Elimina el último conjunto de entradas de vectores
+            vector_inputs.pop()
+            escalar_inputs.pop()
 
-            for etiqueta, entrada in entrada_escalar:
-                etiqueta.deleteLater()
-                entrada.deleteLater()
+            # Obtiene el último layout agregado al target_layout
+            item_layout = target_layout.takeAt(target_layout.count() - 1)
 
-            for etiqueta, entrada in entradas_vector:
-                etiqueta.deleteLater()
-                entrada.deleteLater()
-
-            item_layout = inputs_layout.takeAt(inputs_layout.count() - 1)
             if isinstance(item_layout, QLayout):
+                # Eliminar todos los widgets dentro del layout
                 while item_layout.count():
                     item = item_layout.takeAt(0)
-                    if item.widget():
+                    if item.widget():  # Si es un widget, eliminarlo
                         item.widget().deleteLater()
+                    elif item.layout():  # Si es un sublayout, eliminarlo recursivamente
+                        sub_layout = item.layout()
+                        while sub_layout.count():
+                            sub_item = sub_layout.takeAt(0)
+                            if sub_item.widget():
+                                sub_item.widget().deleteLater()
+                            elif sub_item.layout():
+                                sub_item.layout().deleteLater()
+                        sub_layout.deleteLater()
+                # Eliminar el layout principal
                 item_layout.deleteLater()
-            elif item_layout:
-                widget = item_layout.widget()
-                if widget:
-                    widget.deleteLater()
-            inputs_layout.removeItem(item_layout)
 
     @staticmethod
     def limpiar_entradas_vectores(vector_inputs, escalar_inputs, inputs_layout):
@@ -593,7 +630,7 @@ class InterfazHelperVector:
 
         for idx, vector_input in enumerate(entradas_vector):
             valores_vector = []
-            for _, entrada in vector_input:
+            for entrada in vector_input:
                 vector_text = entrada.text()
                 if vector_text.strip() == "":
                     raise ValueError(f"El vector {idx + 1} tiene componentes vacíos.")

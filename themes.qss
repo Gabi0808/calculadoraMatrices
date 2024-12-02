@@ -191,3 +191,97 @@ QStackedWidget {
                 selection-background-color: #cceff1; /* Fondo de selección */
                 selection-color: #089bac; /* Texto seleccionado */
             }
+/* QTextEdit */
+QTextEdit {
+    background-color: #eaf8f9; /* Fondo cian claro */
+    color: #089bac; /* Texto cian oscuro */
+    border: 2px solid #056e79; /* Borde cian oscuro */
+    padding: 10px;
+    border-radius: 5px;
+    font-family: "Courier New"; /* Fuente monoespaciada */
+    font-size: 18px;
+    font-weight: bold; /* Peso de la fuente */
+}
+
+/* QCheckBox */
+QCheckBox {
+    color: #089bac; /* Texto cian oscuro */
+    font-size: 16px; /* Aumenta el tamaño de la etiqueta */
+    font-weight: bold; /* Negrita */
+    background-color: #eaf8f9; /* Fondo cian claro */
+    padding: 5px; /* Espaciado interno para hacer el fondo más evidente */
+    border-radius: 5px; /* Borde redondeado */
+}
+
+QCheckBox::indicator {
+    width: 20px; /* Aumenta el tamaño del indicador */
+    height: 20px;
+}
+
+QCheckBox::indicator:checked {
+    background-color: #089bac; /* Fondo cian oscuro al seleccionar */
+    border: 2px solid #056e79; /* Borde cian oscuro profundo */
+}
+
+QCheckBox::indicator:unchecked {
+    background-color: white;
+    border: 2px solid #089bac; /* Borde cian oscuro */
+}
+
+/* QLineEdit */
+QLineEdit {
+    background-color: #eaf8f9; /* Fondo cian claro */
+    color: #089bac;
+    border: 2px solid #056e79; /* Borde cian oscuro */
+    padding: 10px;
+    font-size: 16px; /* Texto más grande */
+    border-radius: 5px;
+}
+
+QLineEdit:focus {
+    border: 2px solid #089bac; /* Borde más resaltado al enfocar */
+}
+
+/* QTableWidget */
+QTableWidget {
+    background-color: #eaf8f9; /* Fondo cian claro, igual que el fondo general */
+    color: #089bac; /* Texto cian oscuro, igual que el texto general */
+    font-family: Arial, sans-serif; /* Igual que en el resto de los widgets */
+    font-size: 14px; /* Igual que el tamaño de fuente en el resto de la aplicación */
+    border: 1px solid #e7f5f7; /* Borde cian grisáceo */
+    border-radius: 5px; /* Bordes redondeados */
+}
+
+/* Estilo de las celdas del QTableWidget */
+QTableWidget::item {
+    padding: 8px; /* Espaciado en las celdas */
+    border: 1px solid #e7f5f7; /* Borde cian grisáceo */
+    background-color: #ffffff; /* Fondo blanco para las celdas */
+    color: #089bac; /* Texto cian oscuro */
+}
+
+/* Estilo para las celdas seleccionadas */
+QTableWidget::item:selected {
+    background-color: #cceff1; /* Fondo cian claro al seleccionar una celda */
+    color: #089bac; /* Texto cian oscuro */
+}
+
+/* Estilo para la cabecera de la tabla */
+QHeaderView::section {
+    background-color: #089bac; /* Fondo cian oscuro */
+    color: white; /* Texto blanco en la cabecera */
+    padding: 8px; /* Espaciado en las cabeceras */
+    font-weight: bold; /* Negrita para las cabeceras */
+    font-size: 16px; /* Un poco más grande que el texto de las celdas */
+    border: 1px solid #e7f5f7; /* Borde cian grisáceo */
+}
+
+/* Estilo cuando se pasa el cursor por encima de las celdas */
+QTableWidget::item:hover {
+    background-color: #cceff1; /* Fondo cian más claro */
+}
+
+/* Borde de la tabla cuando se selecciona */
+QTableWidget:focus {
+    border: 2px solid #089bac; /* Borde cian oscuro al enfocar la tabla */
+}

@@ -8,8 +8,9 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matrices import Matriz
 from vectores import Vector
 from interfazHelper import InterfazHelperMatriz, InterfazHelperVector
-from visualizador import *
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
+from utilidades import Formateador
+from TransformCanvas import TransformCanvas
 
 from PyQt5.QtWidgets import (
     QWidget, QSplitter, QVBoxLayout, QHBoxLayout, QLabel,
@@ -103,156 +104,19 @@ class IngresarMatrizDialog(QWidget):
 
     def resolver_gauss(self):
         try:
+            InterfazHelperMatriz.limpiar_resultados_texto(self.resultado_texto, self.result_layout)
             self.matriz.matriz = InterfazHelperMatriz.procesar_entradas_matrices(self.entradas)
             resultado, pasos = self.matriz.eliminacion_gauss_jordan()
 
             self.resultado_texto= InterfazHelperMatriz.mostrar_resultados(
-                f"Soluciones:\n{self.matriz.calcular_soluciones_general()}\n\nResultado:\n{self.matriz.mostrar()}\n\nPasos:\n{pasos}"
+                f"Soluciones:\n{self.matriz.calcular_soluciones_general()}\n\nResultado:\n{self.matriz.mostrar()}", 
+                f"Pasos:\n{pasos}"
             )
             
             self.result_layout.addWidget(self.resultado_texto)
             
         except ValueError as e:
             QMessageBox.critical(self, "Error", f"Error al ingresar datos: {str(e)}")
-
-class TransformacionMatrizVisualizadorWidget(QWidget):
-    def __init__(self, visualizador):
-        super().__init__()
-
-        self.visualizador = visualizador
-        self.setWindowTitle("Visualización de Transformación")
-
-        layout = QVBoxLayout(self)
-
-        # Configuración de matplotlib para PyQt
-        self.fig, self.ax = plt.subplots(figsize=(8, 6))  # Tamaño ajustado
-        self.canvas = FigureCanvas(self.fig)
-        self.toolbar = NavigationToolbar(self.canvas, self)
-        layout.addWidget(self.toolbar)
-        layout.addWidget(self.canvas)
-
-        self.canvas.mpl_connect('scroll_event', self.zoom)
-
-        self.slider = QSlider(Qt.Horizontal)
-        self.slider.setRange(0, 100)  # Slider de 0 a 100 para representar t entre 0 y 1
-        self.slider.setValue(0)  # Valor inicial del slider
-        self.slider.setSingleStep(1)  # Incrementos de 0.01
-        self.slider.valueChanged.connect(self.actualizar_transformacion)
-
-        # Crear etiqueta para mostrar el valor de t
-        self.label = QLabel(f't = 0.00')
-        layout.addWidget(self.label)
-        layout.addWidget(self.slider)
-
-        # Almacenar las referencias de los textos creados
-        self.text_objects = []
-
-        # Visualización inicial con t = 0 (sin transformación)
-        self.actualizar_transformacion()
-        #self.exec_()
-
-    def actualizar_transformacion(self):
-        t = self.slider.value() / 100.0
-        self.label.setText(f't = {t:.2f}')
-        self.ax.clear()  # Limpia la gráfica, pero no los textos fuera del eje
-
-        # Limpiar los textos anteriores
-        for text_obj in self.text_objects:
-            text_obj.remove()
-        self.text_objects = []
-
-        # Visualizamos la transformación
-        self.visualizador.visualizar_con_interpolacion(self.ax, rango_valores=20, paso=1, t=t)
-
-        # Establecemos los límites de los ejes
-        self.ax.set_xlim(-7, 7)
-        self.ax.set_ylim(-7, 7)
-
-        # Fuentes personalizadas
-        font_x1 = {'family': 'courier new',  
-                'color': 'red', 
-                'weight': 'bold',  
-                'size': 10} 
-
-        font_x2 = {'family': 'courier new',  
-                'color': 'green', 
-                'weight': 'bold', 
-                'size': 10}  
-     
-        font_vector = {'family': 'courier new',  
-                'color': 'yellow', 
-                'weight': 'bold', 
-                'size': 10} 
-        
-        font_resultado = {'family': 'courier new',  
-                'color': 'white', 
-                'weight': 'bold', 
-                'size': 10}  
-        
-        espaciado_fijo = 0.02 
-
-        x_base = 0.25
-
-        def formatear_numero(num):
-            return f'{num:6.2f}'  
-
-        def calcular_longitud_texto(texto):
-
-            return len(texto) * 0.01
-
-        matriz_0_0_str = formatear_numero(self.visualizador.matriz.matriz[0][0])
-        matriz_1_0_str = formatear_numero(self.visualizador.matriz.matriz[1][0])
-        self.text_objects.append(self.fig.text(x_base, 0.8, f'[{matriz_0_0_str}\n[{matriz_1_0_str}', fontdict=font_x1))
-
-        longitud_columna1 = calcular_longitud_texto(matriz_0_0_str)
-        x_base = x_base + longitud_columna1 + 0.01
-
-        matriz_0_1_str = formatear_numero(self.visualizador.matriz.matriz[0][1])
-        matriz_1_1_str = formatear_numero(self.visualizador.matriz.matriz[1][1])
-        self.text_objects.append(self.fig.text(x_base, 0.8, f'{matriz_0_1_str}]\n{matriz_1_1_str}]', fontdict=font_x2))
-
-        longitud_columna2 = calcular_longitud_texto(matriz_0_1_str)
-        x_base = x_base + longitud_columna2 + espaciado_fijo
-
-        vector_0_str = formatear_numero(self.visualizador.vector.vector[0])
-        vector_1_str = formatear_numero(self.visualizador.vector.vector[1])
-        self.text_objects.append(self.fig.text(x_base, 0.8, f'[{vector_0_str}]\n[{vector_1_str}]', fontdict=font_vector))
-
-        longitud_vector = calcular_longitud_texto(vector_0_str)
-        x_base = x_base + longitud_vector + espaciado_fijo
-
-        self.text_objects.append(self.fig.text(x_base, 0.82, ' = ', fontdict=font_resultado))
-
-        longitud_igual = calcular_longitud_texto('=')
-        x_base = x_base + longitud_igual + espaciado_fijo
-
-        resultado_0_str = formatear_numero(self.visualizador.resultado[0])
-        resultado_1_str = formatear_numero(self.visualizador.resultado[1])
-        self.text_objects.append(self.fig.text(x_base, 0.8, f'[{resultado_0_str}]\n[{resultado_1_str}]', fontdict=font_resultado))
-
-        self.canvas.draw()
-
-    def zoom(self, event):
-        base_scale = 1.2
-
-        if event.button == 'up':
-            scale_factor = base_scale
-        elif event.button == 'down':
-            scale_factor = 1 / base_scale
-        else:
-            return
-        xlim = self.ax.get_xlim()
-        ylim = self.ax.get_ylim()
-        xdata = event.xdata  # Obtener la posición del mouse en x
-        ydata = event.ydata  # Obtener la posición del mouse en y
-        if xdata is None or ydata is None:
-            return
-        new_xlim = [xdata - (xdata - xlim[0]) / scale_factor, xdata + (xlim[1] - xdata) / scale_factor]
-        new_ylim = [ydata - (ydata - ylim[0]) / scale_factor, ydata + (ylim[1] - ydata) / scale_factor]
-
-        self.ax.set_xlim(new_xlim)
-        self.ax.set_ylim(new_ylim)
-        self.canvas.draw()
             
 class MultiplicacionMatrizVectorDialog(QWidget):
     def __init__(self):
@@ -262,32 +126,32 @@ class MultiplicacionMatrizVectorDialog(QWidget):
 
         # Layout principal vertical
         self.main_layout = QVBoxLayout(self)
-        self.main_layout.setAlignment(Qt.AlignTop)
-        self.main_layout.setContentsMargins(20, 20, 20, 20)
-        self.main_layout.setSpacing(10)
+        #self.main_layout.setAlignment(Qt.AlignTop)
+        self.main_layout.setContentsMargins(0, 0, 0, 0)
 
         # Splitter para dividir entradas y resultados
         self.splitter = QSplitter(Qt.Horizontal, self)
         self.splitter.setContentsMargins(0, 0, 0, 0)
 
-        self.contenedor_entradas_widgets = QWidget()
-        self.contenedor_entradas = QVBoxLayout(self.contenedor_entradas_widgets)
+        self.contenedor_izquierdo_widgets = QWidget()
+        self.contenedor_izquierdo = QVBoxLayout(self.contenedor_izquierdo_widgets)
+        self.contenedor_izquierdo.setAlignment(Qt.AlignTop)
+
+        self.resultados_widget = QWidget()
+        self.contenedor_resultados = QVBoxLayout(self.resultados_widget)
+        self.contenedor_resultados.setAlignment(Qt.AlignTop)
+
+        self.resultado_opcion = None
 
         #Nivel 1
         self.contenedor_inputs = QHBoxLayout()
-        self.contenedor_entradas.addLayout(self.contenedor_inputs)
-        self.resultado_texto = None
-        
-        #Nivel 2
         self.contenedor_matriz = QVBoxLayout()
         self.contenedor_vector = QHBoxLayout()
-        self.contenedor_ejecutar = QHBoxLayout()
-
         self.contenedor_inputs.addLayout(self.contenedor_matriz)
         self.contenedor_inputs.addLayout(self.contenedor_vector)
-        self.contenedor_inputs.addLayout(self.contenedor_ejecutar)
-
-        #Nivel 3
+        self.contenedor_izquierdo.addLayout(self.contenedor_inputs)
+        
+        #Nivel 2
         self.n_input = QLineEdit()
         self.m_input = QLineEdit()
 
@@ -319,7 +183,7 @@ class MultiplicacionMatrizVectorDialog(QWidget):
         # Matriz y vector que se multiplicaran al final
         self.matriz = None
         self.vector_columna = None
-
+        self.resultado_texto = None
         self.grid_layout = None
         self.rectangular = True
         self.entradas = []
@@ -328,18 +192,17 @@ class MultiplicacionMatrizVectorDialog(QWidget):
         self.escalar_inputs = []
         self.opciones_calc_combo_box = QComboBox()
         self.opciones_calc_combo_box.addItems(["","Calcular multiplicacion", "Visualizar transformacion"])
-        self.visualizador_widgets = QWidget()
-        self.visualizador_layout = QVBoxLayout(self.visualizador_widgets)
+        self.transformCanvasWidget = None
 
         # Añadir el botón de calcular al final del main_layout
         calcular_btn = QPushButton("Calcular")
         calcular_btn.clicked.connect(self.calc_respuesta)
         self.calc_botones_layout.addWidget(calcular_btn)
         self.calc_botones_layout.addWidget(self.opciones_calc_combo_box)
-        self.contenedor_entradas.addLayout(self.calc_botones_layout)
+        self.contenedor_izquierdo.addLayout(self.calc_botones_layout)
 
-        self.splitter.addWidget(self.contenedor_entradas_widgets)
-        self.splitter.addWidget(self.visualizador_widgets)
+        self.splitter.addWidget(self.contenedor_izquierdo_widgets)
+        self.splitter.addWidget(self.resultados_widget)
         self.splitter.setSizes([350, 100])
         self.main_layout.addWidget(self.splitter)
 
@@ -349,18 +212,10 @@ class MultiplicacionMatrizVectorDialog(QWidget):
 
         if n is None:
             return  
-
-        InterfazHelperVector.crear_botones_vectores(lambda: InterfazHelperVector.agregar_campo_vector(self.vector_inputs, self.escalar_inputs, self.contenedor_vectores_layout, n),
-                                              lambda: InterfazHelperVector.eliminar_vector(self.vector_inputs, self.escalar_inputs, self.contenedor_vectores_layout),
-                                              lambda: self.calcular_vector_columna(), 
-                                              self.contenedor_botones_layout  
-                                              )
-
+        
         InterfazHelperVector.limpiar_entradas_vectores(self.vector_inputs, self.escalar_inputs, self.contenedor_vectores_layout)
 
         InterfazHelperVector.agregar_campo_vector(self.vector_inputs, self.escalar_inputs, self.contenedor_vectores_layout,n)
-        InterfazHelperVector.agregar_campo_vector(self.vector_inputs, self.escalar_inputs, self.contenedor_vectores_layout,n)
-
 
     def guardar_matriz(self):
         try:
@@ -372,36 +227,10 @@ class MultiplicacionMatrizVectorDialog(QWidget):
         except ValueError as e:
             QMessageBox.critical(self, "Error", f"Error al ingresar datos: {str(e)}")
 
-    def procesar_entrada_vectores(self):
-        try:
-            
-            valores_vector = [elemento for elemento in self.vector_inputs]        
-            valores_escalar = [entrada[0][1] for entrada in self.escalar_inputs]
-
-            lista_vectores_escalados = InterfazHelperVector.procesar_entrada(valores_vector, valores_escalar)
-
-            return lista_vectores_escalados
-
-        except ValueError as e:
-            QMessageBox.critical(self, "Error al procesar entradas", str(e))
-            return []
-
-
-    def calcular_vector_columna(self):
-        try:
-            lista_vectores = self.procesar_entrada_vectores()
-            if not lista_vectores:
-                return 
-            
-            resultado, pasos = Vector.sumar_vectores(*lista_vectores)
-        
-            self.vector_columna = resultado
-
-        except Exception as e:
-            QMessageBox.critical(self, "Error", str(e))
-
     def calc_respuesta(self):
         try:
+            valores_vector_columna = InterfazHelperVector.procesar_entrada(self.vector_inputs, self.escalar_inputs)
+            self.vector_columna = valores_vector_columna[0]
             opcion_seleccionada = self.opciones_calc_combo_box.currentText()
             
             if opcion_seleccionada == "Calcular multiplicacion":
@@ -411,16 +240,24 @@ class MultiplicacionMatrizVectorDialog(QWidget):
                 if not hasattr(self, 'matriz') or not hasattr(self, 'vector_columna'):
                     raise ValueError("La matriz y el vector deben estar correctamente definidos antes de visualizar la transformación.")
 
-                InterfazHelperMatriz.limpiar_resultados_texto(self.resultado_texto, self.visualizador_layout)
-                while self.visualizador_layout.count() > 0:
-                    widget = self.visualizador_layout.takeAt(0).widget()
+                InterfazHelperMatriz.limpiar_resultados_texto(self.resultado_texto, self.contenedor_resultados)
+                while self.contenedor_resultados.count() > 0:
+                    widget = self.contenedor_resultados.takeAt(0).widget()
                     if widget is not None:
                         widget.deleteLater()
 
-                self.visualizador = VisualizadorMatrizPorVector(self.matriz, self.vector_columna)
-                transformacion_widget = TransformacionMatrizVisualizadorWidget(self.visualizador)
+                #self.visualizador = VisualizadorMatrizPorVector(self.matriz, self.vector_columna)
+                resultado_final, _ = self.matriz.multiplicar_matriz_por_vector(self.vector_columna)
+                self.transformCanvasWidget = TransformCanvas(self.matriz, self.vector_columna, self)
+                html = Formateador.box_matrix_and_vectors(
+                    self.matriz.matriz,  # Asegúrate de que devuelve una lista de listas
+                    self.vector_columna.vector,  # Lista de números
+                    resultado_final.vector  # Lista de números
+                )
 
-                self.visualizador_layout.addWidget(transformacion_widget)
+                self.transformCanvasWidget.datos.setHtml(html)
+
+                self.contenedor_resultados.addWidget(self.transformCanvasWidget.get_widget())
             else:
                 print("Ingrese una opción válida")        
         except Exception as e:
@@ -437,18 +274,15 @@ class MultiplicacionMatrizVectorDialog(QWidget):
 
             resultado_final, pasos_final = self.matriz.multiplicar_matriz_por_vector(self.vector_columna)
 
-            resultado_texto = f"Resultado de la multiplicación de matriz por vector:\n{resultado_final}\n\n"
-            pasos_texto = "Pasos detallados de la multiplicación:\n" + pasos_final
-
-            resultado_completo = resultado_texto + pasos_texto
-
-            while self.visualizador_layout.count() > 0:
-                    widget = self.visualizador_layout.takeAt(0).widget()
+            while self.contenedor_resultados.count() > 0:
+                    widget = self.contenedor_resultados.takeAt(0).widget()
                     if widget is not None:
                         widget.deleteLater()
-            InterfazHelperMatriz.limpiar_resultados_texto(self.resultado_texto, self.visualizador_layout)
-            self.resultado_texto = InterfazHelperMatriz.mostrar_resultados(resultado_completo)
-            self.visualizador_layout.addWidget(self.resultado_texto)
+
+            InterfazHelperMatriz.limpiar_resultados_texto(self.resultado_opcion, self.contenedor_resultados)
+            self.resultado_texto = InterfazHelperMatriz.mostrar_resultados(f"Resultado de la multiplicación de matriz por vector:\n{Formateador.box_vector(resultado_final.vector)}",
+                                                                           f"Pasos detallados de la multiplicación:\n\n {pasos_final}")
+            self.contenedor_resultados.addWidget(self.resultado_texto)
 
         except ValueError as e:
             QMessageBox.critical(self, "Error", f"Error: {str(e)}")
@@ -740,7 +574,8 @@ class MultiplicacionMatricesDialog(QWidget):
 
             InterfazHelperMatriz.limpiar_resultados_texto(self.resultado_texto, self.main_layout)
             
-            self.resultado_texto = InterfazHelperMatriz.mostrar_resultados(pasos)
+            self.resultado_texto = InterfazHelperMatriz.mostrar_resultados(f"Resultado de la multiplicacion de Matrices:\n\n{resultado.mostrar} ",
+                                                                           f"Pasos de la multiplicacion de matrices:\n\n{pasos}")
 
             self.main_layout.addWidget(self.resultado_texto)
 
@@ -813,8 +648,8 @@ class TranspuestaDialog(QWidget):
                 if widget is not None:
                     widget.deleteLater()
             
-            resultado_texto = InterfazHelperMatriz.mostrar_resultados(
-                f"Matriz original:\n{self.matriz.mostrar()}\n\nMatriz Transpuesta:\n{matriz_transpuesta.mostrar()}"
+            resultado_texto = InterfazHelperMatriz.mostrar_resultados(f"Matriz Transpuesta:\n{matriz_transpuesta.mostrar()}",
+                                                                      f"Matriz original:\n{self.matriz.mostrar()}\n\nMatriz Transpuesta:\n{matriz_transpuesta.mostrar()}"
             )
             self.resultado_layout.addWidget(resultado_texto)
         
@@ -890,7 +725,8 @@ class DeterminanteDialog(QWidget):
             InterfazHelperMatriz.limpiar_resultados_texto(self.resultado_texto, self.main_layout)
             
             self.resultado_texto = InterfazHelperMatriz.mostrar_resultados(
-                f"Determinante:\n{det}\n\nPasos:\n{pasos}"
+                f"Determinante:\n{det}",
+                f"Pasos:\n{pasos}"
             )
     
             self.resultado_layout.addWidget(self.resultado_texto)
@@ -971,7 +807,8 @@ class CramerDialog(QWidget):
                 texto_resultado = "\n".join([f"x{i+1} = {sol}" for i, sol in enumerate(map(str, soluciones))])
 
                 InterfazHelperMatriz.limpiar_resultados_texto(self.resultado_texto, self.main_layout)
-                resultado_texto_widget = InterfazHelperMatriz.mostrar_resultados(f"Soluciones:\n{texto_resultado}\n\nPasos:\n{mensaje_o_pasos}")
+                resultado_texto_widget = InterfazHelperMatriz.mostrar_resultados(f"Soluciones:\n{texto_resultado}",
+                                                                                 f"Pasos:\n{mensaje_o_pasos}")
                 
                 self.resultado_layout.addWidget(resultado_texto_widget)
                 self.resultado_texto = resultado_texto_widget
@@ -1051,7 +888,8 @@ class InversaTab(QWidget):
             InterfazHelperMatriz.limpiar_resultados_texto(self.resultado_texto, self.main_layout)
             
             self.resultado_texto = InterfazHelperMatriz.mostrar_resultados(
-                f"Matriz inversa:\n{matriz_inversa.mostrar()}\n\nPasos:\n{pasos}"
+                f"Matriz inversa:\n{matriz_inversa.mostrar()}",
+                f"Pasos:\n{pasos}"
             )
             
             self.resultado_layout.addWidget(self.resultado_texto)
