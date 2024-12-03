@@ -21,7 +21,12 @@ class BiseccionTab(QWidget):
         self.boton_calcular = InterfazHelperAnalisisNumerico.crear_boton("Calcular Bisección Múltiple", self.calcular_biseccion_multiple)
         self.boton_siguiente = InterfazHelperAnalisisNumerico.crear_boton("Siguiente Iteración", self.siguiente_iteracion)
         self.boton_siguiente.setEnabled(False)
-        
+        self.boton_anterior = InterfazHelperAnalisisNumerico.crear_boton(
+            "Anterior Iteración",
+            self.anterior_iteracion
+        )
+        self.boton_anterior.setEnabled(False)
+
         entradas_layout.addLayout(contenedor_funcion)
 
         entradas_layout.addLayout(contenedor_intervalos)
@@ -30,7 +35,10 @@ class BiseccionTab(QWidget):
         self.label_raiz = QLabel()
 
         entradas_layout.addWidget(self.boton_calcular)
-        entradas_layout.addWidget(self.boton_siguiente)
+        iteraciones_layout = QHBoxLayout()
+        iteraciones_layout.addWidget(self.boton_anterior)
+        iteraciones_layout.addWidget(self.boton_siguiente)
+        entradas_layout.addLayout(iteraciones_layout)
         entradas_layout.addWidget(self.label_raiz)
         entradas_layout.addWidget(self.table_widget_resultado)
 
@@ -113,16 +121,41 @@ class BiseccionTab(QWidget):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Ocurrió un error: {e}")
 
+    def anterior_iteracion(self):
+        if self.iteracion_actual > 0:
+            # Retroceder a la iteración anterior
+            self.iteracion_actual -= 1
+            self.boton_siguiente.setEnabled(True)
+        else:
+            if self.raiz_actual > 0:
+                # Si estamos en la primera iteración de la raíz actual, retrocedemos a la raíz anterior
+                self.raiz_actual -= 1
+                self.iteracion_actual = len(self.puntos_por_raiz[self.raiz_actual]) - 1  # Última iteración de la raíz anterior
+                header = ["Iteración", "a", "b", "c", "Error Relativo"]
+                InterfazHelperAnalisisNumerico.modificar_tabla(self.tablas[self.raiz_actual], self.table_widget_resultado, header)
+                self.boton_siguiente.setEnabled(True)
+            else:
+                # Si no hay más raíces anteriores, deshabilitar el botón
+                QMessageBox.information(self, "Inicio", "Ya estás en la primera iteración.")
+                self.boton_anterior.setEnabled(False)
+                return
+
+        # Obtener los puntos de la iteración actual y actualizar el gráfico
+        a, b, c = self.puntos_por_raiz[self.raiz_actual][self.iteracion_actual]
+        self.actualizar_grafico(a, b, c)
+
+
     def siguiente_iteracion(self):
         if self.iteracion_actual < len(self.puntos_por_raiz[self.raiz_actual]) - 1:
             self.iteracion_actual += 1
+            self.boton_anterior.setEnabled(True)
         else:
             if self.raiz_actual < len(self.raices) - 1:
                 self.raiz_actual += 1
                 self.iteracion_actual = 0
                 header = ["Iteración", "a", "b", "c", "Error Relativo"]
                 InterfazHelperAnalisisNumerico.modificar_tabla(self.tablas[self.raiz_actual], self.table_widget_resultado, header)
-
+                self.boton_anterior.setEnabled(True)
             else:
                 QMessageBox.information(self, "Fin", "Todas las iteraciones han terminado.")
                 self.boton_siguiente.setEnabled(False)
@@ -212,14 +245,22 @@ class NewtonRaphsonTab(QWidget):
         self.boton_siguiente = InterfazHelperAnalisisNumerico.crear_boton("Siguiente Iteración", self.siguiente_iteracion)
         self.boton_siguiente.setEnabled(False)
         
-        self.text_edit_resultado = InterfazHelperAnalisisNumerico.crear_text_edit()
+        self.boton_anterior = InterfazHelperAnalisisNumerico.crear_boton(
+            "Anterior Iteración",
+            self.anterior_iteracion
+        )
+        self.boton_anterior.setEnabled(False)
+
         self.table_widget_resultado = QTableWidget()
         self.label_raiz = QLabel()
         
         entradas_layout.addLayout(contenedor_funcion)
         entradas_layout.addLayout(contenedor_inicial)
         entradas_layout.addWidget(self.boton_calcular)
-        entradas_layout.addWidget(self.boton_siguiente)
+        iteraciones_layout = QHBoxLayout()
+        iteraciones_layout.addWidget(self.boton_anterior)
+        iteraciones_layout.addWidget(self.boton_siguiente)
+        entradas_layout.addLayout(iteraciones_layout)
         entradas_layout.addWidget(self.label_raiz)
         entradas_layout.addWidget(self.table_widget_resultado)
 
@@ -302,11 +343,22 @@ class NewtonRaphsonTab(QWidget):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Ocurrió un error: {e}")
 
+    def anterior_iteracion(self):
+        if self.iteracion_actual > 0:  # Verifica que no estamos en la primera iteración
+            self.iteracion_actual -= 1  # Retrocede una iteración
+            x_prev, x_curr, _ = self.iteraciones[self.iteracion_actual]
+            self.actualizar_grafico(x_curr)
+            self.boton_siguiente.setEnabled(True)
+        else:
+            QMessageBox.information(self, "Inicio", "Ya estás en la primera iteración.")
+            self.boton_anterior.setEnabled(False)
+
     def siguiente_iteracion(self):
         if self.iteracion_actual < len(self.iteraciones) - 1:
             self.iteracion_actual += 1
             x_anterior, x_nuevo, _ = self.iteraciones[self.iteracion_actual]
             self.actualizar_grafico(x_nuevo)
+            self.boton_anterior.setEnabled(True)
         else:
             QMessageBox.information(self, "Fin", "Todas las iteraciones han terminado.")
             self.boton_siguiente.setEnabled(False)
@@ -365,6 +417,7 @@ class NewtonRaphsonTab(QWidget):
             self.puntos_iteracion.append(
                 self.canvas.ax.plot(tangente_x_vals, tangente_y_vals, 'r--', label="Tangente")[0]
             )
+            self.puntos_iteracion.append(self.canvas.ax.plot([], [], ' ', label=f'Iteración actual: {self.iteracion_actual}')[0])
 
         self.canvas.ax.legend()
         self.canvas.draw()
@@ -386,13 +439,22 @@ class FalsaPosicionTab(QWidget):
         self.boton_calcular = InterfazHelperAnalisisNumerico.crear_boton("Calcular Falsa Posición", self.calcular_falsa_posicion)
         self.boton_siguiente = InterfazHelperAnalisisNumerico.crear_boton("Siguiente Iteración", self.siguiente_iteracion)
         self.boton_siguiente.setEnabled(False)
+
+        self.boton_anterior = InterfazHelperAnalisisNumerico.crear_boton(
+            "Anterior Iteración",
+            self.anterior_iteracion
+        )
+        self.boton_anterior.setEnabled(False)
         
         self.table_widget_resultado = QTableWidget()
 
         entradas_layout.addLayout(contenedor_funcion)
         entradas_layout.addLayout(contenedor_intervalos)
         entradas_layout.addWidget(self.boton_calcular)
-        entradas_layout.addWidget(self.boton_siguiente)
+        iteraciones_layout = QHBoxLayout()
+        iteraciones_layout.addWidget(self.boton_anterior)
+        iteraciones_layout.addWidget(self.boton_siguiente)
+        entradas_layout.addLayout(iteraciones_layout)
         self.label_raiz = QLabel()
         entradas_layout.addWidget(self.label_raiz)
         entradas_layout.addWidget(self.table_widget_resultado)
@@ -487,11 +549,22 @@ class FalsaPosicionTab(QWidget):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Ocurrió un error: {e}")
 
+    def anterior_iteracion(self):
+        if self.iteracion_actual > 0:  # Verifica que no estamos en la primera iteración
+            self.iteracion_actual -= 1  # Retrocede una iteración
+            a, b, c = self.puntos_por_raiz[self.iteracion_actual]
+            self.actualizar_grafico(a, b, c)
+            self.boton_siguiente.setEnabled(True)
+        else:
+            QMessageBox.information(self, "Inicio", "Ya estás en la primera iteración.")
+            self.boton_anterior.setEnabled(False)
+
     def siguiente_iteracion(self):
         if self.iteracion_actual < len(self.puntos_por_raiz) - 1:
             self.iteracion_actual += 1
             a, b, c = self.puntos_por_raiz[self.iteracion_actual]
             self.actualizar_grafico(a, b, c)
+            self.boton_anterior.setEnabled(True)
         else:
             QMessageBox.information(self, "Fin", "Todas las iteraciones han terminado.")
             self.boton_siguiente.setEnabled(False)
@@ -550,6 +623,8 @@ class FalsaPosicionTab(QWidget):
             self.puntos_iteracion.append(self.canvas.ax.plot(b, f_b, 'yo', label='b')[0])
         if f_c is not None:
             self.puntos_iteracion.append(self.canvas.ax.plot(c, f_c, 'go', label='c')[0])
+        
+        self.puntos_iteracion.append(self.canvas.ax.plot([], [], ' ', label=f'Iteración actual: {self.iteracion_actual}')[0])
 
         self.canvas.ax.legend()
         self.canvas.draw()
@@ -585,6 +660,12 @@ class SecanteTab(QWidget):
         )
         self.boton_siguiente.setEnabled(False)
 
+        self.boton_anterior = InterfazHelperAnalisisNumerico.crear_boton(
+            "Anterior Iteración",
+            self.anterior_iteracion
+        )
+        self.boton_anterior.setEnabled(False)
+
         # Campo para mostrar resultados
         #self.text_edit_resultado = InterfazHelperAnalisisNumerico.crear_text_edit()
         self.table_widget_resultado = QTableWidget()
@@ -594,8 +675,10 @@ class SecanteTab(QWidget):
         entradas_layout.addLayout(contenedor_funcion)
         entradas_layout.addLayout(contenedor_intervalos)
         entradas_layout.addWidget(self.boton_calcular)
-        entradas_layout.addWidget(self.boton_siguiente)
-        #entradas_layout.addWidget(QLabel("Registro de iteraciones:"))
+        iteraciones_layout = QHBoxLayout()
+        iteraciones_layout.addWidget(self.boton_anterior)
+        iteraciones_layout.addWidget(self.boton_siguiente)
+        entradas_layout.addLayout(iteraciones_layout)
         entradas_layout.addWidget(self.label_raiz)
         entradas_layout.addWidget(self.table_widget_resultado)
 
@@ -658,7 +741,7 @@ class SecanteTab(QWidget):
             if self.funcion.dominio.contains(x0) & self.funcion.dominio.contains(x1):
                 self.raiz, self.puntos_por_raiz, self.tabla = self.funcion.secante(x0, x1, tolerancia=1e-6)
                 self.iteracion_actual = 0
-                
+
                 if self.raiz:
                     self.boton_siguiente.setEnabled(True)
                     self.label_raiz.setText(f"Raiz aproximada: {self.raiz:.6g}")
@@ -680,11 +763,22 @@ class SecanteTab(QWidget):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Ocurrió un error: {e}")
 
+    def anterior_iteracion(self):
+        if self.iteracion_actual > 0:  # Verifica que no estamos en la primera iteración
+            self.iteracion_actual -= 1  # Retrocede una iteración
+            x_prev, x_curr = self.puntos_por_raiz[self.iteracion_actual]
+            self.actualizar_grafico(x_prev, x_curr)
+            self.boton_siguiente.setEnabled(True)
+        else:
+            QMessageBox.information(self, "Inicio", "Ya estás en la primera iteración.")
+            self.boton_anterior.setEnabled(False)
+
     def siguiente_iteracion(self):
         if self.iteracion_actual < len(self.puntos_por_raiz) - 1:
             self.iteracion_actual += 1
             x_prev, x_curr = self.puntos_por_raiz[self.iteracion_actual]
             self.actualizar_grafico(x_prev, x_curr)
+            self.boton_anterior.setEnabled(True)
         else:
             QMessageBox.information(self, "Fin", "Todas las iteraciones han terminado.")
             self.boton_siguiente.setEnabled(False)
@@ -753,5 +847,6 @@ class SecanteTab(QWidget):
             self.linea_secante = self.canvas.ax.plot(
                 [x_prev, x_curr], [f_x_prev, f_x_curr], 'k--', label='Secante'
             )[0] 
+            self.puntos_iteracion.append(self.canvas.ax.plot([], [], ' ', label=f'Iteración actual: {self.iteracion_actual}')[0])
         self.canvas.ax.legend()
         self.canvas.draw()

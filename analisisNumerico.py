@@ -17,7 +17,19 @@ class Funcion:
         funcion_str = re.sub(r'(\d)([a-zA-Z])', r'\1*\2', funcion_str)
         funcion_str = re.sub(r'(sin|cos|tan|log|exp|sqrt)([a-zA-Z])', r'\1(\2)', funcion_str)
         return funcion_str
-        
+
+    def es_valor_valido(self, valor):
+        """
+        Verifica si el valor dado pertenece al dominio de la función en los reales.
+        """
+        try:
+            resultado = self.funcion.subs(self.variable, valor)
+            if resultado.is_real is False:
+                return False
+            return True
+        except Exception:
+            return False
+
     def evaluar_funcion(self, valor):           
         try:
             resultado = self.funcion.subs(self.variable, valor)
@@ -47,8 +59,8 @@ class Funcion:
         return abs((x_nuevo - x_anterior) / x_nuevo) * 100 if x_nuevo != 0 else float('inf')
 
     def biseccion(self, a, b, tolerancia=1e-6):
-        if not self.es_valor_valido(a) or not self.es_valor_valido(b):
-            return None, "Uno o ambos valores no pertenecen al dominio de la función.", []
+        #if not self.es_valor_valido(a) or not self.es_valor_valido(b):
+        #    return None, "Uno o ambos valores no pertenecen al dominio de la función.", []
         
         puntos = []
         tabla = []
@@ -101,8 +113,8 @@ class Funcion:
         return raices, puntos_por_raiz, tablas
 
     def newton_raphson(self, x0, tolerancia=1e-6, max_iteraciones=100):
-        if not self.es_valor_valido(x0):
-            return None, "El valor inicial no pertenece al dominio de la función.", []
+        #if not self.es_valor_valido(x0):
+         #   return None, "El valor inicial no pertenece al dominio de la función.", []
 
         iteracion = 1
         x_anterior = x0

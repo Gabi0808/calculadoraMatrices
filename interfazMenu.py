@@ -201,7 +201,7 @@ class MenuPrincipal(QWidget):
         barra_layout.addWidget(boton_analisis, alignment=Qt.AlignCenter)
 
         boton_ayuda = QPushButton()
-        boton_ayuda.setToolTip("Ayuda")
+        boton_ayuda.setToolTip("Ayuda(No implementado)")
         boton_ayuda.setFixedSize(100, 100)
         boton_ayuda.setIcon(QIcon(os.path.join("Assets", "ayuda.png")))
         boton_ayuda.setIconSize(boton_ayuda.size())
@@ -209,7 +209,7 @@ class MenuPrincipal(QWidget):
         barra_layout.addWidget(boton_ayuda, alignment=Qt.AlignCenter)
 
         boton_ajustes = QPushButton()
-        boton_ajustes.setToolTip("Ajustes")
+        boton_ajustes.setToolTip("Ajustes(No implementado)")
         boton_ajustes.setFixedSize(100, 100)
         boton_ajustes.setIcon(QIcon(os.path.join("Assets", "ajustes.png")))
         boton_ajustes.setIconSize(boton_ajustes.size())
