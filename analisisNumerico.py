@@ -1,40 +1,31 @@
-import sympy as sym
+from sympy import *
+from sympy.calculus.util import continuous_domain
 import re
 
 class Funcion:
     def __init__(self, funcion, variable=None) -> None:
         funcion_procesada = self._preprocesar_funcion(funcion)
-        self.funcion = sym.sympify(funcion_procesada)
+        self.funcion = sympify(funcion_procesada)
         
-        if not isinstance(self.funcion, sym.Expr):
+        if not isinstance(self.funcion, Expr):
             raise ValueError("La función ingresada no es válida. Asegúrate de ingresar una expresión matemática correcta.")
         
-        self.variable = variable if variable is not None else sym.symbols('x')
+        self.variable = variable if variable is not None else symbols('x')
+        self.dominio = self.dominio = self.determinar_dominio(self.funcion, self.variable)
     
     def _preprocesar_funcion(self, funcion_str):
         funcion_str = re.sub(r'(\d)([a-zA-Z])', r'\1*\2', funcion_str)
         funcion_str = re.sub(r'(sin|cos|tan|log|exp|sqrt)([a-zA-Z])', r'\1(\2)', funcion_str)
         return funcion_str
-    
-    def es_valor_valido(self, valor):
-        """
-        Verifica si el valor dado pertenece al dominio de la función en los reales.
-        """
+        
+    def evaluar_funcion(self, valor):           
         try:
             resultado = self.funcion.subs(self.variable, valor)
-            if resultado.is_real is False:
-                return False
-            return True
-        except Exception:
-            return False
-    
-    def evaluar_funcion(self, valor):
-        if not self.es_valor_valido(valor):
-            print(f"El valor {valor} no pertenece al dominio de la función.")
+            if resultado.is_real:
+                return float(resultado.evalf())
+            else:
+                 print(f"El valor {valor} no pertenece al dominio de la función.")
             return None
-        try:
-            resultado = self.funcion.subs(self.variable, valor)
-            return float(resultado.evalf())
         except Exception as e:
             print(f"Error al evaluar la función en {valor}: {e}")
             return None
@@ -43,7 +34,7 @@ class Funcion:
         if not self.es_valor_valido(valor):
             print(f"El valor {valor} no pertenece al dominio de la función.")
             return None
-        derivada = sym.diff(self.funcion, self.variable)
+        derivada = diff(self.funcion, self.variable)
         try:
             resultado = derivada.subs(self.variable, valor)
             return float(resultado.evalf())
@@ -211,3 +202,14 @@ class Funcion:
 
         registro += "\nNo se encontró una raíz en el límite de iteraciones.\n"
         return None, puntos_por_raiz, tabla
+
+    def determinar_dominio(self, expr, variable):
+            try:
+                # Intentar convertir la expresión a simbólica
+                func = sympify(expr)
+                
+                # Calcular el dominio continuo de la función
+                domain = continuous_domain(func, variable, S.Reals)
+                return domain
+            except Exception:
+                return None

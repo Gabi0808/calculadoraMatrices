@@ -7,7 +7,6 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matrices import Matriz
 from vectores import Vector
 from interfazHelper import InterfazHelperVector, InterfazHelperMatriz
-from visualizador import *
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 
 from PyQt5.QtWidgets import (

@@ -22,8 +22,6 @@ class BiseccionTab(QWidget):
         self.boton_siguiente = InterfazHelperAnalisisNumerico.crear_boton("Siguiente Iteración", self.siguiente_iteracion)
         self.boton_siguiente.setEnabled(False)
         
-        self.text_edit_resultado = InterfazHelperAnalisisNumerico.crear_text_edit()
-        
         entradas_layout.addLayout(contenedor_funcion)
 
         entradas_layout.addLayout(contenedor_intervalos)
@@ -91,22 +89,25 @@ class BiseccionTab(QWidget):
             a = float(self.input_a.text())
             b = float(self.input_b.text())
             self.funcion = Funcion(funcion_texto)
-            self.raices, self.puntos_por_raiz, self.tablas = self.funcion.biseccion_multiple(a, b, subintervalos=10, tolerancia=1e-6)
-            self.raiz_actual = 0
-            self.iteracion_actual = 0
-            if self.raices:
-                self.boton_siguiente.setEnabled(True)
-                self.label_raiz.setText(f"Raiz aproximada: {self.raices[self.raiz_actual]:.6g}")
-                self.label_raiz.setContentsMargins(15, 15, 15, 15)
-                header = ["Iteración", "a", "b", "c", "Error Relativo"]
-                InterfazHelperAnalisisNumerico.modificar_tabla(self.tablas[self.raiz_actual], self.table_widget_resultado, header)
 
+            if self.funcion.dominio.contains(a) & self.funcion.dominio.contains(b): 
+                self.raices, self.puntos_por_raiz, self.tablas = self.funcion.biseccion_multiple(a, b, subintervalos=10, tolerancia=1e-6)
+                self.raiz_actual = 0
+                self.iteracion_actual = 0
+                if self.raices:
+                    self.boton_siguiente.setEnabled(True)
+                    self.label_raiz.setText(f"Raiz aproximada: {self.raices[self.raiz_actual]:.6g}")
+                    self.label_raiz.setContentsMargins(15, 15, 15, 15)
+                    header = ["Iteración", "a", "b", "c", "Error Relativo"]
+                    InterfazHelperAnalisisNumerico.modificar_tabla(self.tablas[self.raiz_actual], self.table_widget_resultado, header)
 
-                # Pasar los valores de a, b, c de la primera iteración a actualizar_grafico
-                a, b, c = self.puntos_por_raiz[self.raiz_actual][self.iteracion_actual]
-                self.actualizar_grafico(a, b, c)
+                    # Pasar los valores de a, b, c de la primera iteración a actualizar_grafico
+                    a, b, c = self.puntos_por_raiz[self.raiz_actual][self.iteracion_actual]
+                    self.actualizar_grafico(a, b, c)
+                else:
+                    QMessageBox.information(self, "Resultado", "No se encontraron raíces.")
             else:
-                QMessageBox.information(self, "Resultado", "No se encontraron raíces.")
+                QMessageBox.information(self, "Entradas", "Alguna de las entradas no pertenece al dominio.") 
         except ValueError as e:
             QMessageBox.critical(self, "Error", f"Entrada no válida: {e}")
         except Exception as e:
@@ -139,20 +140,21 @@ class BiseccionTab(QWidget):
         num_points = 1000
         x_vals = [x_min + i * (x_max - x_min) / (num_points - 1) for i in range(num_points)]
         
+        x_vals_filtrados = [x for x in x_vals if self.funcion.dominio.contains(x)]
+
+        # Evaluar los valores de la función para los valores de x filtrados
         y_vals = []
-        for x in x_vals:
+        for x in x_vals_filtrados:
             try:
                 y_vals.append(self.funcion.evaluar_funcion(x))
-            except Exception:
-                # Si ocurre un error, simplemente detén la evaluación
-                break
-
-        # Graficar la función
-        self.canvas.ax.plot(x_vals, y_vals, label="f(x)", color='blue')
+            except Exception as e:
+                print(f"Error al evaluar la función en x={x}: {e}")
+                
+        self.canvas.ax.plot(x_vals_filtrados, y_vals, label="f(x)", color='blue')
         self.canvas.ax.axhline(0, color='black', linewidth=0.7)
         self.canvas.ax.axvline(0, color='black', linewidth=0.7)
-        self.canvas.ax.set_xlim(self.xlim)
-        self.canvas.ax.set_ylim(self.ylim)
+        #self.canvas.ax.set_xlim(self.xlim)
+        #self.canvas.ax.set_ylim(self.ylim)
         self.canvas.ax.set_xlim(self.initial_xlim)
         self.canvas.ax.set_ylim(self.initial_ylim)
         self.canvas.ax.set_aspect('equal', adjustable='box')
@@ -221,7 +223,6 @@ class NewtonRaphsonTab(QWidget):
         entradas_layout.addWidget(self.label_raiz)
         entradas_layout.addWidget(self.table_widget_resultado)
 
-
         grafico_widget, self.canvas = InterfazHelperAnalisisNumerico.crear_canvas_widget(self)
 
         splitter.addWidget(entradas_widget)
@@ -275,23 +276,27 @@ class NewtonRaphsonTab(QWidget):
             x0 = float(self.input_x0.text())
             self.funcion = Funcion(funcion_texto)
             
-            self.raiz, self.iteraciones, self.tabla = self.funcion.newton_raphson(x0, tolerancia=1e-6)
-            
-            self.iteracion_actual = 0 
+            if self.funcion.dominio.contains(x0):
 
-            if self.raiz is not None:
-                self.boton_siguiente.setEnabled(True)
-                self.label_raiz.setText(f"Raiz aproximada: {self.raiz:.6g}")
-                self.label_raiz.setContentsMargins(15, 15, 15, 15)
-                header = ["Iteración", "x","f'(x)","Error Relativo"]
-                InterfazHelperAnalisisNumerico.modificar_tabla(self.tabla, self.table_widget_resultado, header)
-            
-                # Graficar los puntos de la primera iteración
-                x0, x1, error = self.iteraciones[self.iteracion_actual]
-                self.actualizar_grafico(x0)
-            
+                self.raiz, self.iteraciones, self.tabla = self.funcion.newton_raphson(x0, tolerancia=1e-6)
+                self.iteracion_actual = 0 
+
+                if self.raiz is not None:
+                    self.boton_siguiente.setEnabled(True)
+                    self.label_raiz.setText(f"Raiz aproximada: {self.raiz:.6g}")
+                    self.label_raiz.setContentsMargins(15, 15, 15, 15)
+                    header = ["Iteración", "x","f'(x)","Error Relativo"]
+                    InterfazHelperAnalisisNumerico.modificar_tabla(self.tabla, self.table_widget_resultado, header)
+                
+                    # Graficar los puntos de la primera iteración
+                    x0, x1, error = self.iteraciones[self.iteracion_actual]
+                    self.actualizar_grafico(x0)
+                
+                else:
+                    QMessageBox.information(self, "Resultado", "No se encontró una raíz con el método Newton-Raphson.")
+
             else:
-                QMessageBox.information(self, "Resultado", "No se encontró una raíz con el método Newton-Raphson.")
+                QMessageBox.information(self, "Entrada", "El valor inicial no pertenece al dominio.") 
         except ValueError as e:
             QMessageBox.critical(self, "Error", f"Entrada no válida: {e}")
         except Exception as e:
@@ -315,16 +320,17 @@ class NewtonRaphsonTab(QWidget):
         num_points = 1000
         x_vals = [x_min + i * (x_max - x_min) / (num_points - 1) for i in range(num_points)]
         
+        x_vals_filtrados = [x for x in x_vals if self.funcion.dominio.contains(x)]
+
+        # Evaluar los valores de la función para los valores de x filtrados
         y_vals = []
-        for x in x_vals:
+        for x in x_vals_filtrados:
             try:
                 y_vals.append(self.funcion.evaluar_funcion(x))
-            except Exception:
-                # Si ocurre un error, simplemente detén la evaluación
-                break
+            except Exception as e:
+                print(f"Error al evaluar la función en x={x}: {e}")
 
-        self.canvas.ax.plot(x_vals, y_vals, label="f(x)", color='blue')
-
+        self.canvas.ax.plot(x_vals_filtrados, y_vals, label="f(x)", color='blue')
         self.canvas.ax.axhline(0, color='black', linewidth=0.7)
         self.canvas.ax.axvline(0, color='black', linewidth=0.7)
         self.canvas.ax.set_xlim(self.initial_xlim)
@@ -457,26 +463,28 @@ class FalsaPosicionTab(QWidget):
             a = float(self.input_a.text())
             b = float(self.input_b.text())
             self.funcion = Funcion(funcion_texto)
+            
+            if self.funcion.dominio.contains(a) & self.funcion.dominio.contains(b):
 
-            self.raiz, self.puntos_por_raiz, self.tabla = self.funcion.falsa_posicion(a, b, tolerancia=1e-6)
-            self.iteracion_actual = 0
-            if self.raiz:
-                self.boton_siguiente.setEnabled(True)
-                self.label_raiz.setText(f"Raiz aproximada: {self.raiz:.6g}")
-                self.label_raiz.setContentsMargins(15, 15, 15, 15)
-                header = ["Iteración", "a", "b", "c", "f(c)","Error Relativo"]
-                InterfazHelperAnalisisNumerico.modificar_tabla(self.tabla, self.table_widget_resultado, header)
+                self.raiz, self.puntos_por_raiz, self.tabla = self.funcion.falsa_posicion(a, b, tolerancia=1e-6)
+                self.iteracion_actual = 0
+                if self.raiz:
+                    self.boton_siguiente.setEnabled(True)
+                    self.label_raiz.setText(f"Raiz aproximada: {self.raiz:.6g}")
+                    self.label_raiz.setContentsMargins(15, 15, 15, 15)
+                    header = ["Iteración", "a", "b", "c", "f(c)","Error Relativo"]
+                    InterfazHelperAnalisisNumerico.modificar_tabla(self.tabla, self.table_widget_resultado, header)
 
-                # Pasar los valores de a, b, c de la primera iteración a actualizar_grafico
-                a, b, c = self.puntos_por_raiz[self.iteracion_actual]
-                self.actualizar_grafico(a, b, c)
+                    # Pasar los valores de a, b, c de la primera iteración a actualizar_grafico
+                    a, b, c = self.puntos_por_raiz[self.iteracion_actual]
+                    self.actualizar_grafico(a, b, c)
+                else:
+                    QMessageBox.information(self, "Resultado", "No se encontró una raíz con el método Falsa Posicion.")
             else:
-                self.text_edit_resultado.setText("No se encontraron raíces.")
+                QMessageBox.information(self, "Entradas", "Algunas de las entradas no son parte del dominio de la funcion.")
         except ValueError as e:
-            # Error en la entrada del usuario
             QMessageBox.critical(self, "Error", f"Entrada no válida: {e}")
         except Exception as e:
-            # Otro error durante el cálculo
             QMessageBox.critical(self, "Error", f"Ocurrió un error: {e}")
 
     def siguiente_iteracion(self):
@@ -497,16 +505,18 @@ class FalsaPosicionTab(QWidget):
         num_points = 1000
         x_vals = [x_min + i * (x_max - x_min) / (num_points - 1) for i in range(num_points)]
         
+        x_vals_filtrados = [x for x in x_vals if self.funcion.dominio.contains(x)]
+
+        # Evaluar los valores de la función para los valores de x filtrados
         y_vals = []
-        for x in x_vals:
+        for x in x_vals_filtrados:
             try:
                 y_vals.append(self.funcion.evaluar_funcion(x))
-            except Exception:
-                # Si ocurre un error, simplemente detén la evaluación
-                break
-
+            except Exception as e:
+                print(f"Error al evaluar la función en x={x}: {e}")
+                
         # Graficar la función
-        self.canvas.ax.plot(x_vals, y_vals, label="f(x)", color='blue')
+        self.canvas.ax.plot(x_vals_filtrados, y_vals, label="f(x)", color='blue')
         self.canvas.ax.axhline(0, color='black', linewidth=0.7)
         self.canvas.ax.axvline(0, color='black', linewidth=0.7)
         self.canvas.ax.set_xlim(self.initial_xlim)
@@ -645,21 +655,26 @@ class SecanteTab(QWidget):
             x1 = float(self.input_x1.text())
             self.funcion = Funcion(funcion_texto)
 
-            self.raiz, self.registro, self.puntos_por_raiz, self.tabla = self.funcion.secante(x0, x1, tolerancia=1e-6)
-            self.iteracion_actual = 0
+            if self.funcion.dominio.contains(x0) & self.funcion.dominio.contains(x1):
+                self.raiz, self.puntos_por_raiz, self.tabla = self.funcion.secante(x0, x1, tolerancia=1e-6)
+                self.iteracion_actual = 0
+                
+                if self.raiz:
+                    self.boton_siguiente.setEnabled(True)
+                    self.label_raiz.setText(f"Raiz aproximada: {self.raiz:.6g}")
+                    self.label_raiz.setContentsMargins(15, 15, 15, 15)
+                    header = ["Iteración", "x0", "x1", "x2", "Error Relativo"]
+                    InterfazHelperAnalisisNumerico.modificar_tabla(self.tabla, self.table_widget_resultado, header)
 
-            if self.raiz:
-                self.boton_siguiente.setEnabled(True)
-                self.label_raiz.setText(f"Raiz aproximada: {self.raiz:.6g}")
-                self.label_raiz.setContentsMargins(15, 15, 15, 15)
-                header = ["Iteración", "x0", "x1", "x2", "Error Relativo"]
-                InterfazHelperAnalisisNumerico.modificar_tabla(self.tabla, self.table_widget_resultado, header)
-
-                # Graficar los puntos de la primera iteración
-                x_prev, x_curr = self.puntos_por_raiz[self.iteracion_actual]
-                self.actualizar_grafico(x_prev, x_curr)
+                    # Graficar los puntos de la primera iteración
+                    x_prev, x_curr = self.puntos_por_raiz[self.iteracion_actual]
+                    self.actualizar_grafico(x_prev, x_curr)
+                else:
+                    QMessageBox.information(self, "Resultado", "No se encontraron raíces.")
             else:
-                QMessageBox.information(self, "Resultado", "No se encontraron raíces.")
+                QMessageBox.information(self, "Entradas", "Algunas de las entradas no son parte del dominio de la funcion.")
+            
+
         except ValueError as e:
             QMessageBox.critical(self, "Error", f"Entrada no válida: {e}")
         except Exception as e:
@@ -683,20 +698,21 @@ class SecanteTab(QWidget):
         num_points = 1000
         x_vals = [x_min + i * (x_max - x_min) / (num_points - 1) for i in range(num_points)]
         
+        x_vals_filtrados = [x for x in x_vals if self.funcion.dominio.contains(x)]
+
+        # Evaluar los valores de la función para los valores de x filtrados
         y_vals = []
-        for x in x_vals:
+        for x in x_vals_filtrados:
             try:
                 y_vals.append(self.funcion.evaluar_funcion(x))
-            except Exception:
-                # Si ocurre un error, simplemente detén la evaluación
-                break
+            except Exception as e:
+                print(f"Error al evaluar la función en x={x}: {e}")
 
-        # Graficar la función
-        self.canvas.ax.plot(x_vals, y_vals, label="f(x)", color='blue')
+        self.canvas.ax.plot(x_vals_filtrados, y_vals, label="f(x)", color='blue')
         self.canvas.ax.axhline(0, color='black', linewidth=0.7)
         self.canvas.ax.axvline(0, color='black', linewidth=0.7)
-        self.canvas.ax.set_xlim(self.xlim)
-        self.canvas.ax.set_ylim(self.ylim)
+        #self.canvas.ax.set_xlim(self.xlim)
+        #self.canvas.ax.set_ylim(self.ylim)
         self.canvas.ax.set_xlim(self.initial_xlim)
         self.canvas.ax.set_ylim(self.initial_ylim)
         self.canvas.ax.set_aspect('equal', adjustable='box')

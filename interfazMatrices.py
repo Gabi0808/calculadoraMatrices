@@ -1,12 +1,11 @@
 import sys
 from PyQt5.QtWidgets import (
     QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QLineEdit,
-    QPushButton, QMessageBox, QTextEdit, QWidget, QComboBox,QSlider, QCheckBox
+    QPushButton, QMessageBox, QTextEdit, QWidget, QComboBox, QCheckBox
 )
 from PyQt5.QtCore import Qt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matrices import Matriz
-from vectores import Vector
 from interfazHelper import InterfazHelperMatriz, InterfazHelperVector
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from utilidades import Formateador

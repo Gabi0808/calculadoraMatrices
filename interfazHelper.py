@@ -11,7 +11,6 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 from io import BytesIO
-from visualizador import *
 from PyQt5.QtCore import Qt
 from CustomPlotCanvas import CustomPlotCanvas
 
