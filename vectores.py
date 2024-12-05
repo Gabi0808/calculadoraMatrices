@@ -1,7 +1,7 @@
 from utilidades import *
 
 class Vector:
-    def __init__(self, dimension, vector=None, orientacion="horizontal"):
+    def __init__(self, dimension, vector=None, orientacion="vertical"):
         self.dimension = dimension
         self.orientacion = orientacion
         if vector is not None:
@@ -66,10 +66,10 @@ class Vector:
         # Calcular cada multiplicación individual y acumular el resultado
         productos_individuales = []
         for vf, vc in zip(self.vector, otro_vector.vector):
-            producto = vf * vc
+            producto = vf * vc  # Multiplicación de elementos correspondientes
             productos_individuales.append(producto)
-
         # Mostrar los productos individuales
+        
         gestor_pasos.agregar_paso("Productos individuales:")
         for i, (vf, vc, prod) in enumerate(zip(self.vector, otro_vector.vector, productos_individuales)):
             gestor_pasos.agregar_paso(f"Elemento {i + 1}: {vf} * {vc} = {prod}")
@@ -82,5 +82,7 @@ class Vector:
         return resultado, gestor_pasos.mostrar_pasos()
     
     def cambiar_orientacion(self):
-        nueva_orientacion = "vertical" if self.orientacion == "horizontal" else "horizontal"
-        return Vector(self.dimension, self.vector, nueva_orientacion)
+        if self.orientacion == "vertical": 
+            self.orientacion = "horizontal"
+        else:
+            self.orientacion = "vertical"

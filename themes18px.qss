@@ -1,0 +1,274 @@
+/* Fondo general de la aplicación */
+QWidget {
+    background-color: #eaf8f9; /* Cian claro */
+    color: #089bac; /* Cian oscuro */
+    font-family: Arial, sans-serif;
+    font-size: 18px; /* Aumentado el tamaño de la fuente */
+}
+
+/* Botones */
+QPushButton {
+    background-color: #089bac; /* Fondo cian oscuro */
+    color: white; /* Texto blanco */
+    border: 2px solid #089bac; /* Borde en cian oscuro */
+    border-radius: 8px;
+    padding: 12px 18px; /* Ajustado el espaciado para el tamaño de la fuente */
+    font-weight: bold;
+}
+
+QPushButton:hover {
+    background-color: #e7f5f7; /* Fondo cian grisáceo */
+    color: #089bac; /* Texto en cian oscuro */
+    border: 2px solid #089bac; /* Mantén el borde cian oscuro */
+}
+
+QPushButton:pressed {
+    background-color: #056e79; /* Cian oscuro más profundo */
+    border-color: #056e79;
+}
+
+QPushButton:disabled {
+    background-color: #e7f5f7; /* Fondo cian grisáceo */
+    color: #b3d9db; /* Texto más claro */
+    border-color: #b3d9db;
+}
+
+QPushButton:focus{
+    outline: none;
+}
+
+/* Textos */
+QLabel {
+    color: #089bac; /* Texto cian oscuro */
+    font-size: 18px; /* Aumentado el tamaño de la fuente */
+    font-weight: bold;
+}
+
+/* Campos de texto */
+QLineEdit {
+    background-color: white;
+    color: #089bac;
+    border: 1px solid #e7f5f7; /* Cian grisáceo */
+    padding: 10px;
+    border-radius: 5px;
+    font-size: 18px; /* Aumentado el tamaño de la fuente */
+}
+
+QLineEdit:focus {
+    border: 2px solid #089bac; /* Cian oscuro al enfocar */
+}
+
+/* Tabs */
+QTabWidget::pane {
+    background-color: #eaf8f9; /* Fondo cian claro */
+    border: 1px solid #e7f5f7; /* Cian grisáceo */
+}
+
+QTabBar::tab {
+    background-color: #e7f5f7; /* Fondo cian grisáceo */
+    color: #089bac;
+    padding: 12px; /* Aumentado el espaciado para el tamaño de la fuente */
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+}
+
+QTabBar::tab:selected {
+    background-color: #089bac; /* Fondo cian oscuro */
+    color: white;
+}
+
+QTabBar::tab:hover {
+    background-color: #cceff1; /* Cian más claro al pasar el cursor */
+}
+
+/* Splitter */
+QSplitter::handle {
+    background-color: #089bac; /* Cian grisáceo */
+    border: 1px solid #e7f5f7; /* Cian oscuro */
+}
+
+QSplitter::handle:hover {
+    background-color: #089bac; /* Cian oscuro al pasar el cursor */
+}
+
+/* Barra de progreso */
+QProgressBar {
+    background-color: #e7f5f7; /* Fondo cian grisáceo */
+    color: #089bac;
+    border-radius: 10px;
+    text-align: center;
+}
+
+QProgressBar::chunk {
+    background-color: #089bac; /* Cian oscuro */
+    border-radius: 10px;
+}
+
+/* Sliders */
+QSlider::groove:horizontal {
+    height: 8px; /* Aumentado el tamaño */
+    background: #e7f5f7; /* Cian grisáceo */
+    border-radius: 4px;
+}
+
+QSlider::handle:horizontal {
+    background: #089bac; /* Cian oscuro */
+    border: 2px solid #056e79; /* Cian oscuro más profundo */
+    width: 18px; /* Aumentado el tamaño del control */
+    height: 18px;
+    border-radius: 9px;
+    margin: -6px 0;
+}
+
+QSlider::handle:horizontal:hover {
+    background: #056e79; /* Cian oscuro más profundo */
+}
+
+/* Scrollbars */
+QScrollBar:vertical, QScrollBar:horizontal {
+    background-color: #e7f5f7; /* Cian grisáceo */
+    border: none;
+    width: 12px; /* Ancho aumentado */
+    height: 12px; /* Alto aumentado */
+}
+
+QScrollBar::handle:vertical, QScrollBar::handle:horizontal {
+    background-color: #089bac; /* Cian oscuro */
+    border-radius: 6px; /* Mayor radio */
+}
+
+QScrollBar::handle:vertical:hover, QScrollBar::handle:horizontal:hover {
+    background-color: #056e79; /* Cian oscuro más profundo */
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical,
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+    background: none;
+    border: none;
+}
+
+/* Cuadro de mensajes y otros diálogos */
+QMessageBox {
+    background-color: #eaf8f9; /* Fondo cian claro */
+    color: #089bac; /* Texto cian oscuro */
+    border: 2px solid #089bac;
+    border-radius: 10px;
+}
+
+/* Estilo para Stacked Widgets */
+QStackedWidget {
+    border: 1px solid #e7f5f7; /* Borde cian grisáceo */
+}
+
+QComboBox {
+    background-color: #e7f5f7; /* Fondo cian grisáceo */
+    color: #089bac; /* Texto cian oscuro */
+    border: 1px solid #089bac; /* Borde cian oscuro */
+    border-radius: 5px;
+    padding: 7px 12px; /* Ajustado el espaciado */
+    font-size: 18px; /* Aumentado el tamaño de la fuente */
+}
+
+QComboBox:hover {
+    background-color: #cceff1; /* Fondo más claro al pasar el cursor */
+}
+
+QComboBox::drop-down {
+    border-left: 1px solid #089bac; /* Borde entre el cuadro y la flecha */
+    width: 35px; /* Ancho de la flecha desplegable */
+    background: #e7f5f7; /* Fondo de la flecha */
+}
+
+QComboBox::down-arrow {
+    image: url(down-arrow.png); /* Ruta al icono de flecha */
+    width: 12px;
+    height: 12px;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #ffffff; /* Fondo de la lista */
+    border: 1px solid #089bac; /* Borde de la lista */
+    selection-background-color: #cceff1; /* Fondo de selección */
+    selection-color: #089bac; /* Texto seleccionado */
+}
+
+/* QTextEdit */
+QTextEdit {
+    background-color: #eaf8f9; /* Fondo cian claro */
+    color: #089bac; /* Texto cian oscuro */
+    border: 2px solid #056e79; /* Borde cian oscuro */
+    padding: 12px;
+    border-radius: 5px;
+    font-family: "Courier New"; /* Fuente monoespaciada */
+    font-size: 22px; /* Aumentado el tamaño de la fuente */
+    font-weight: bold; /* Peso de la fuente */
+}
+
+/* QCheckBox */
+QCheckBox {
+    color: #089bac; /* Texto cian oscuro */
+    font-size: 18px; /* Aumentado el tamaño de la fuente */
+    font-weight: bold; /* Negrita */
+    background-color: #eaf8f9; /* Fondo cian claro */
+    padding: 8px; /* Ajustado el espaciado */
+    border-radius: 6px; /* Borde redondeado */
+}
+
+QCheckBox::indicator {
+    width: 24px; /* Aumentado el tamaño del indicador */
+    height: 24px;
+}
+
+QCheckBox::indicator:checked {
+    background-color: #089bac; /* Fondo cian oscuro al seleccionar */
+    border: 2px solid #056e79; /* Borde cian oscuro profundo */
+}
+
+QCheckBox::indicator:unchecked {
+    background-color: white;
+    border: 2px solid #089bac; /* Borde cian oscuro */
+}
+
+/* QTableWidget */
+QTableWidget {
+    background-color: #eaf8f9; /* Fondo cian claro */
+    color: #089bac; /* Texto cian oscuro */
+    font-family: Arial, sans-serif;
+    font-size: 18px; /* Aumentado el tamaño de la fuente */
+    border: 1px solid #e7f5f7; /* Borde cian grisáceo */
+    border-radius: 5px;
+}
+
+/* Estilo de las celdas del QTableWidget */
+QTableWidget::item {
+    padding: 10px; /* Ajustado el espaciado */
+    border: 1px solid #e7f5f7; /* Borde cian grisáceo */
+    background-color: #ffffff; /* Fondo blanco para las celdas */
+    color: #089bac; /* Texto cian oscuro */
+}
+
+/* Estilo para las celdas seleccionadas */
+QTableWidget::item:selected {
+    background-color: #cceff1; /* Fondo cian claro al seleccionar una celda */
+    color: #089bac; /* Texto cian oscuro */
+}
+
+/* Estilo para la cabecera de la tabla */
+QHeaderView::section {
+    background-color: #089bac; /* Fondo cian oscuro */
+    color: white; /* Texto blanco en la cabecera */
+    padding: 10px; /* Ajustado el espaciado */
+    font-weight: bold; /* Negrita para las cabeceras */
+    font-size: 20px; /* Aumentado el tamaño de la fuente en las cabeceras */
+    border: 1px solid #e7f5f7; /* Borde cian grisáceo */
+}
+
+/* Estilo cuando se pasa el cursor por encima de las celdas */
+QTableWidget::item:hover {
+    background-color: #cceff1; /* Fondo cian más claro */
+}
+
+/* Borde de la tabla cuando se selecciona */
+QTableWidget:focus {
+    border: 2px solid #089bac; /* Borde cian oscuro al enfocar la tabla */
+}

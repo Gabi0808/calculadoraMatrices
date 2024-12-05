@@ -8,7 +8,7 @@ from matrices import Matriz
 from vectores import Vector
 from interfazHelper import InterfazHelperVector, InterfazHelperMatriz
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
-
+from utilidades import Formateador
 from PyQt5.QtWidgets import (
     QWidget, QSplitter, QVBoxLayout, QHBoxLayout, QLabel,
     QLineEdit, QPushButton, QTextEdit, QGridLayout, QMessageBox
@@ -45,7 +45,8 @@ class OperacionesVectorTab(QWidget):
                 
     def ejecutar_operacion(self):
         try:
-            lista_vectores = InterfazHelperVector.leer_entrada_vectores_escalares(self.vector_inputs, self.escalar_inputs)
+            #lista_vectores = InterfazHelperVector.leer_entrada_vectores_escalares(self.vector_inputs, self.escalar_inputs)
+            lista_vectores = InterfazHelperVector.procesar_entrada(self.vector_inputs, self.escalar_inputs)
             if not lista_vectores:
                 return 
             
@@ -53,7 +54,9 @@ class OperacionesVectorTab(QWidget):
             
             InterfazHelperMatriz.limpiar_resultados_texto(self.resultado_texto, self.main_layout)
 
-            self.resultado_texto = InterfazHelperMatriz.mostrar_resultados(pasos)
+            self.resultado_texto = InterfazHelperMatriz.mostrar_resultados(f"Resultado de la suma:\n{Formateador.box_vector(resultado.vector)}",
+                                                                            f"Pasos detallados: \n {pasos}")
+
 
             self.main_layout.addWidget(self.resultado_texto)
 
@@ -72,6 +75,9 @@ class ProductoVectorTab(QWidget):
         self.vector_fila_inputs = [] 
         self.vector_columna_inputs = []
         self.escalares_inputs = []
+        self.escalar_fila_inputs = []
+        self.escalar_columna_inputs = []
+
         self.resultados_texto = None
 
         contenedor_layout, self.contenedor_vectores_layout, self.contenedor_botones_layout = InterfazHelperVector.crear_layout_vectores(
@@ -86,44 +92,32 @@ class ProductoVectorTab(QWidget):
         InterfazHelperVector.limpiar_entradas_vectores(self.vector_columna_inputs, self.escalares_inputs, self.contenedor_vectores_layout)        
         InterfazHelperVector.limpiar_entradas_vectores(self.vector_fila_inputs, self.escalares_inputs, self.contenedor_vectores_layout)        
 
-        
-
         n = InterfazHelperVector.leer_entrada_dimension_vector(self.dimension_input)
 
         if n is None:
                 return
 
-        InterfazHelperVector.agregar_campo_vector(self.vector_fila_inputs, self.escalares_inputs, self.contenedor_vectores_layout, n, orientacion="horizontal")
-        InterfazHelperVector.agregar_campo_vector(self.vector_columna_inputs, self.escalares_inputs, self.contenedor_vectores_layout, n, orientacion="vertical")
+        InterfazHelperVector.agregar_campo_vector(self.vector_fila_inputs, self.escalar_fila_inputs, self.contenedor_vectores_layout, n, orientacion="horizontal")
+        InterfazHelperVector.agregar_campo_vector(self.vector_columna_inputs, self.escalar_columna_inputs, self.contenedor_vectores_layout, n, orientacion="vertical")
 
         if self.contenedor_botones_layout.count() == 0:
             ejecutar_btn = QPushButton("Calcular producto")
             ejecutar_btn.clicked.connect(self.calcular_producto)
             self.contenedor_botones_layout.addWidget(ejecutar_btn)
     
-    def procesar_entrada_vectores(self):
-        try:
-            
-            valores_escalares = [escalar[0][1] for escalar in self.escalares_inputs]
-            vector_fila_obj = InterfazHelperVector.procesar_entrada(self.vector_fila_inputs, [valores_escalares[0]], "horizontal")[0]
-            vector_columna_obj = InterfazHelperVector.procesar_entrada(self.vector_columna_inputs, [valores_escalares[1]], "vertical")[0]
-            
-            return vector_fila_obj, vector_columna_obj
-
-        except ValueError as e:
-            QMessageBox.critical(self, "Error al procesar entradas", str(e))
-            return []
-
     def calcular_producto(self):
         try:
         
-            vector_fila_obj, vector_columna_obj = self.procesar_entrada_vectores()
+            vector_fila_obj = InterfazHelperVector.procesar_entrada(self.vector_fila_inputs, self.escalar_fila_inputs)[0]
+            vector_columna_obj = InterfazHelperVector.procesar_entrada(self.vector_columna_inputs, self.escalar_columna_inputs)[0]
             
+            vector_fila_obj.cambiar_orientacion()
             resultado, pasos = vector_fila_obj.producto_vector_fila_por_vector_columna(vector_columna_obj)
 
             InterfazHelperMatriz.limpiar_resultados_texto(self.resultados_texto, self.main_layout)
 
-            self.resultados_texto = InterfazHelperMatriz.mostrar_resultados(f"{pasos}\nResultado del producto: {resultado}")
+            self.resultados_texto = InterfazHelperMatriz.mostrar_resultados(f"Resultado del producto: {resultado}",
+                                                                            f"Pasos detallados: \n {pasos}")
 
             self.main_layout.addWidget(self.resultados_texto)
 

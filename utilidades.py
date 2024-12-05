@@ -92,7 +92,7 @@ class Formateador:
 
         # Definir colores
         column_colors = ["red", "green", "blue", "orange"]  # Colores para las columnas
-        vector_color = "yellow"
+        vector_color = "purple"
 
         # Crear cajas individuales con colores
         matrix_box = box_matrix(matrix, matrix_title, colors=column_colors)

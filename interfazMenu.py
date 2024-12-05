@@ -161,8 +161,8 @@ class MenuPrincipal(QWidget):
         # Barra lateral
         # ---------------------
         barra_layout = QVBoxLayout()
-        barra_layout.setSpacing(30)
-        barra_layout.setContentsMargins(0, 50, 0, 0)  # Márgenes para empujar hacia abajo
+        barra_layout.setSpacing(50)
+        barra_layout.setContentsMargins(0, 100, 0, 0)  # Márgenes para empujar hacia abajo
 
         barra_widget = QWidget()
         barra_widget.setStyleSheet("""
@@ -178,15 +178,15 @@ class MenuPrincipal(QWidget):
         # Botones de la barra lateral
         boton_matrices = QPushButton()
         boton_matrices.setToolTip("Matrices")
-        boton_matrices.setFixedSize(100, 100)
-        boton_matrices.setIcon(QIcon(os.path.join("Assets", "matriz.png")))
+        boton_matrices.setFixedSize(75, 75)
+        boton_matrices.setIcon(QIcon(os.path.join("Assets", "mathematics.png")))
         boton_matrices.setIconSize(boton_matrices.size())
         boton_matrices.clicked.connect(self.cambiar_a_matrices)
         barra_layout.addWidget(boton_matrices, alignment=Qt.AlignCenter)
 
         boton_vectores = QPushButton()
         boton_vectores.setToolTip("Vectores")
-        boton_vectores.setFixedSize(100, 100)
+        boton_vectores.setFixedSize(75, 75)
         boton_vectores.setIcon(QIcon(os.path.join("Assets", "vector.png")))
         boton_vectores.setIconSize(boton_vectores.size())
         boton_vectores.clicked.connect(self.cambiar_a_vectores)
@@ -194,24 +194,24 @@ class MenuPrincipal(QWidget):
 
         boton_analisis = QPushButton()
         boton_analisis.setToolTip("Análisis Numérico")
-        boton_analisis.setFixedSize(100, 100)
-        boton_analisis.setIcon(QIcon(os.path.join("Assets", "iconofx.png")))
+        boton_analisis.setFixedSize(75, 75)
+        boton_analisis.setIcon(QIcon(os.path.join("Assets", "function.png")))
         boton_analisis.setIconSize(boton_analisis.size())
         boton_analisis.clicked.connect(self.cambiar_a_analisis_numerico)
         barra_layout.addWidget(boton_analisis, alignment=Qt.AlignCenter)
 
         boton_ayuda = QPushButton()
         boton_ayuda.setToolTip("Ayuda(No implementado)")
-        boton_ayuda.setFixedSize(100, 100)
-        boton_ayuda.setIcon(QIcon(os.path.join("Assets", "ayuda.png")))
+        boton_ayuda.setFixedSize(75, 75)
+        boton_ayuda.setIcon(QIcon(os.path.join("Assets", "question.png")))
         boton_ayuda.setIconSize(boton_ayuda.size())
         boton_ayuda.clicked.connect(self.cambiar_a_analisis_numerico)
         barra_layout.addWidget(boton_ayuda, alignment=Qt.AlignCenter)
 
         boton_ajustes = QPushButton()
         boton_ajustes.setToolTip("Ajustes(No implementado)")
-        boton_ajustes.setFixedSize(100, 100)
-        boton_ajustes.setIcon(QIcon(os.path.join("Assets", "ajustes.png")))
+        boton_ajustes.setFixedSize(75, 75)
+        boton_ajustes.setIcon(QIcon(os.path.join("Assets", "setting.png")))
         boton_ajustes.setIconSize(boton_ajustes.size())
         boton_ajustes.clicked.connect(self.cambiar_a_analisis_numerico)
         barra_layout.addWidget(boton_ajustes, alignment=Qt.AlignCenter)
@@ -246,7 +246,7 @@ class MenuPrincipal(QWidget):
         )
         descripcion.setWordWrap(True)  # Ajuste de línea
         descripcion.setAlignment(Qt.AlignCenter)
-        descripcion.setStyleSheet("font-size: 18px; color: #089bac; max-width: 600px;")
+        #descripcion.setStyleSheet("font-size: 18px; color: #089bac; max-width: 600px;")
         seccion_central_layout.addWidget(descripcion, alignment=Qt.AlignCenter)
 
         # Botones principales
@@ -254,20 +254,21 @@ class MenuPrincipal(QWidget):
         botones_layout.setSpacing(20)
 
         boton_matrices_central = QPushButton("Matrices")
-        boton_matrices_central.setFixedSize(180, 50)
-        boton_matrices_central.setStyleSheet("font-size: 16px; background-color: #089bac; color: white;")
+        #boton_matrices_central.setFixedSize(180, 50)
+        #boton_matrices_central.setStyleSheet("font-size: 16px; background-color: #089bac; color: white;")
         boton_matrices_central.clicked.connect(self.cambiar_a_matrices)
         botones_layout.addWidget(boton_matrices_central)
 
         boton_vectores_central = QPushButton("Vectores")
-        boton_vectores_central.setFixedSize(180, 50)
-        boton_vectores_central.setStyleSheet("font-size: 16px; background-color: #089bac; color: white;")
+
+        #boton_vectores_central.setFixedSize(180, 50)
+        #boton_vectores_central.setStyleSheet("font-size: 16px; background-color: #089bac; color: white;")
         boton_vectores_central.clicked.connect(self.cambiar_a_vectores)
         botones_layout.addWidget(boton_vectores_central)
 
         boton_analisis_central = QPushButton("Análisis Numérico")
-        boton_analisis_central.setFixedSize(180, 50)
-        boton_analisis_central.setStyleSheet("font-size: 16px; background-color: #089bac; color: white;")
+        #boton_analisis_central.setFixedSize(180, 50)
+        #boton_analisis_central.setStyleSheet("font-size: 16px; background-color: #089bac; color: white;")
         boton_analisis_central.clicked.connect(self.cambiar_a_analisis_numerico)
         botones_layout.addWidget(boton_analisis_central)
 
@@ -337,7 +338,16 @@ class VentanaPrincipal(QMainWindow):
         self.boton_volver.triggered.connect(self.mostrar_menu_principal)
         self.tool_bar.addAction(self.boton_volver)
 
+        self.boton_toggle_panel = QAction("Mostrar/Ocultar Panel", self)
+        self.boton_toggle_panel.triggered.connect(self.toggle_panel)
+        self.tool_bar.addAction(self.boton_toggle_panel)
+
         self.boton_volver.setVisible(False)
+
+    def toggle_panel(self):
+        # Alternar la visibilidad del panel
+        is_visible = self.dock_boton_panel.isVisible()
+        self.dock_boton_panel.setVisible(not is_visible)
 
     def mostrar_menu_principal(self):
 
@@ -368,7 +378,7 @@ class VentanaPrincipal(QMainWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    apply_stylesheet(app, "themes.qss")
+    apply_stylesheet(app, "themes22px.qss")
     ventana = VentanaPrincipal()
     ventana.show()
     sys.exit(app.exec_())

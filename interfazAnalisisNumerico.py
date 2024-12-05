@@ -131,6 +131,7 @@ class BiseccionTab(QWidget):
                 # Si estamos en la primera iteración de la raíz actual, retrocedemos a la raíz anterior
                 self.raiz_actual -= 1
                 self.iteracion_actual = len(self.puntos_por_raiz[self.raiz_actual]) - 1  # Última iteración de la raíz anterior
+                self.label_raiz.setText(f"Raiz aproximada: {self.raices[self.raiz_actual]:.6g}")
                 header = ["Iteración", "a", "b", "c", "Error Relativo"]
                 InterfazHelperAnalisisNumerico.modificar_tabla(self.tablas[self.raiz_actual], self.table_widget_resultado, header)
                 self.boton_siguiente.setEnabled(True)
@@ -153,6 +154,7 @@ class BiseccionTab(QWidget):
             if self.raiz_actual < len(self.raices) - 1:
                 self.raiz_actual += 1
                 self.iteracion_actual = 0
+                self.label_raiz.setText(f"Raiz aproximada: {self.raices[self.raiz_actual]:.6g}")
                 header = ["Iteración", "a", "b", "c", "Error Relativo"]
                 InterfazHelperAnalisisNumerico.modificar_tabla(self.tablas[self.raiz_actual], self.table_widget_resultado, header)
                 self.boton_anterior.setEnabled(True)
